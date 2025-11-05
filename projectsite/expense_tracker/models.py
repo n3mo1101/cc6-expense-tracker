@@ -22,7 +22,7 @@ class UserProfile(BaseModel):
         related_name='profile'
     )
     profile_picture = models.CharField(max_length=500, blank=True, null=True)
-    default_currency = models.CharField(max_length=3, default='USD')
+    default_currency = models.CharField(max_length=3, default='PHP')
     timezone = models.CharField(max_length=50, default='UTC')
     
     class Meta:
@@ -72,7 +72,7 @@ class Budget(BaseModel):
     )
     name = models.CharField(max_length=255)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    currency_code = models.CharField(max_length=3, default='USD')
+    currency_code = models.CharField(max_length=3, default='PHP')
     start_date = models.DateField()
     end_date = models.DateField()
     description = models.TextField(blank=True, null=True)
@@ -130,7 +130,7 @@ class Expense(BaseModel):
         related_name='expenses'
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    currency_code = models.CharField(max_length=3, default='USD')
+    currency_code = models.CharField(max_length=3, default='PHP')
     description = models.TextField(blank=True, null=True)
     expense_date = models.DateField()
     is_recurring = models.BooleanField(default=False)
@@ -169,7 +169,7 @@ class Income(BaseModel):
         related_name='incomes'
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    currency_code = models.CharField(max_length=3, default='USD')
+    currency_code = models.CharField(max_length=3, default='PHP')
     source = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     income_date = models.DateField()
