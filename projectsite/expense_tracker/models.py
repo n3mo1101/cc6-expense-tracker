@@ -157,7 +157,7 @@ class Expense(BaseModel):
     
     @property
     def is_recurring_instance(self):
-    # Check if this expense is part of a recurring serie
+    # Check if this expense is part of a recurring series
         return self.parent_expense is not None
 
 
