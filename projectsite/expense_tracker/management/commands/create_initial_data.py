@@ -1,4 +1,3 @@
-# expense_tracker/management/commands/generate_sample_data.py
 import random
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
@@ -48,7 +47,12 @@ class Command(BaseCommand):
             if created:
                 profile.default_currency = random.choice(['USD', 'EUR', 'PHP', 'GBP'])
                 profile.timezone = random.choice(['UTC', 'US/Eastern', 'Europe/London', 'Asia/Manila'])
+                
+                # Assign random avatar from AVATAR_CHOICES
+                avatar_choices = [choice[0] for choice in UserProfile.AVATAR_CHOICES]
+                profile.profile_picture = random.choice(avatar_choices)
                 profile.save()
+                self.stdout.write(f"   🎨 Assigned avatar: {profile.profile_picture}")
             
             # Create user-specific categories
             user_categories = self.create_user_categories(user)

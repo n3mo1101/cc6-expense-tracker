@@ -1,20 +1,25 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
 from .models import UserProfile, ExpenseCategory, Budget, Expense, Income, BudgetCategory
-
+from django.utils.html import mark_safe
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'default_currency', 'timezone', 'public_id', 'created_at')
+    list_display = ('user', 'avatar_display', 'default_currency', 'timezone', 'avatar_preview')
     list_filter = ('default_currency', 'timezone')
-    search_fields = ('user__username', 'user__email', 'public_id')
-    readonly_fields = ('public_id', 'created_at', 'updated_at')
+    readonly_fields = ('avatar_preview',)
     
-    fieldsets = (
-        (None, {'fields': ('user', 'public_id')}),
-        ('Profile Information', {'fields': ('profile_picture', 'default_currency', 'timezone')}),
-        ('Timestamps', {'fields': ('created_at', 'updated_at')}),
-    )
+    def avatar_display(self, obj):
+        # Display friendly avatar name instead of file path
+        return dict(obj.AVATAR_CHOICES).get(obj.profile_picture, 'Default Avatar')
+    avatar_display.short_description = 'Avatar'
+    
+    def avatar_preview(self, obj):
+        # Show avatar preview in admin
+        if obj.profile_picture:
+            return mark_safe(f'<img src="{obj.avatar_url}" width="80" height="80" style="border-radius: 8px; border: 2px solid #ddd;" />')
+        return "No avatar selected"
+    avatar_preview.short_description = 'Avatar Preview'
 
 
 @admin.register(ExpenseCategory)

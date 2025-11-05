@@ -17,11 +17,29 @@ class BaseModel(models.Model):
 # Extended user profile information
 class UserProfile(BaseModel):
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,  # References django.contrib.auth.User
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='profile'
     )
-    profile_picture = models.CharField(max_length=500, blank=True, null=True)
+    
+    # Predefined avatar choices with static file paths
+    AVATAR_CHOICES = [
+        ('static/avatars/avatar1.png', 'Avatar 1'),
+        ('static/avatars/avatar2.png', 'Avatar 2'), 
+        ('static/avatars/avatar3.png', 'Avatar 3'),
+        ('static/avatars/avatar4.png', 'Avatar 4'),
+        ('static/avatars/avatar5.png', 'Avatar 5'),
+        ('static/avatars/avatar6.png', 'Avatar 6'),
+        ('static/avatars/avatar7.png', 'Avatar 7'),
+        ('static/avatars/avatar8.png', 'Avatar 8'),
+    ]
+    
+    profile_picture = models.CharField(
+        max_length=100,
+        choices=AVATAR_CHOICES,
+        default='avatars/avatar1.png',
+        help_text="Choose a profile avatar"
+    )
     default_currency = models.CharField(max_length=3, default='PHP')
     timezone = models.CharField(max_length=50, default='UTC')
     
@@ -30,6 +48,14 @@ class UserProfile(BaseModel):
     
     def __str__(self):
         return f"{self.user.username}'s Profile"
+    
+    # Get the static URL for the selected avatar
+    def get_avatar_url(self):
+        return f"{settings.STATIC_URL}{self.profile_picture}"
+    
+    @property # Property for easy template access
+    def avatar_url(self):
+        return self.get_avatar_url()
 
 
 # Categories for expenses (both predefined and user-defined)
