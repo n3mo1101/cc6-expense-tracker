@@ -71,7 +71,7 @@ def view_data(request):
         'incomes': incomes,
     }
     
-    return render(request, 'expense_tracker/view_data.html', context)
+    return render(request, 'expense_tracker/viewdata.html', context)
 
 from django.shortcuts import redirect
 from django.contrib.auth import logout
