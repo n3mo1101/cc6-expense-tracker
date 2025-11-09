@@ -2,19 +2,23 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #282828;
     margin: 0;
     padding: 0;
     height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
+    color:white;
 }
 
 .login-container {
     width: 100%;
     max-width: 400px;
-    background: white;
+    border-color: white;
+    border-width: 1px;
+    border-style: solid; 
+    background: #1C1C1C;
     padding: 40px;
     border-radius: 15px;
     box-shadow: 0 15px 35px rgba(0,0,0,0.1);
@@ -26,7 +30,7 @@ body {
 }
 
 .login-header h2 {
-    color: #333;
+    color: white;
     margin-bottom: 10px;
     font-size: 28px;
     font-weight: 600;
@@ -44,7 +48,7 @@ body {
 .form-group label {
     display: block;
     margin-bottom: 8px;
-    color: #555;
+    color: white;
     font-weight: 500;
 }
 
@@ -60,13 +64,13 @@ body {
 
 .form-group input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #68C2C2;
 }
 
 .login-btn {
     width: 100%;
     padding: 14px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #68C2C2;
     color: white;
     border: none;
     border-radius: 8px;
