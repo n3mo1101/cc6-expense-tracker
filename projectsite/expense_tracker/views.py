@@ -1,7 +1,16 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+
+# Display dashboard 
+@login_required
+def dashboard(request):
+    context = {
+        'page_title': 'Dashboard',
+        # Add your data here
+    }
+    return render(request, 'index.html', context)
 
 # Add your login view function
 def login_view(request):
@@ -12,19 +21,13 @@ def login_view(request):
         
         if user is not None:
             login(request, user)
-            return redirect('view_data')  # Redirect to view data page after login
+            return redirect('dashboard')  # Redirect to view data page after login
         else:
             messages.error(request, 'Invalid username or password.')
     
     return render(request, 'testing/login.html')
 
-# Keep your existing view_data function but add login_required
-@login_required
-def view_data(request):
-    # For now, use dummy data to test the template
-    context = {
-        'user_username': request.user.username,
-        'profile': None,  # You can add real profile data later
-        'categories': [],  # Empty list for now
-    }
-    return render(request, 'testing/viewdata.html', context)
+def logout_view(request):
+    """Simple logout view"""
+    logout(request)
+    return redirect('login')
