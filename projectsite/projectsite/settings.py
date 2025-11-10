@@ -40,6 +40,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "expense_tracker", # App for expense tracking
+    
+    "widget_tweaks", # Third-party app for form customization
+
 ]
 
 MIDDLEWARE = [
