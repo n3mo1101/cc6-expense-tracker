@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Confirm Receipt</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        .form-group {
+            margin: 15px 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .scan-result {
+            background: #e9f7ef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>✅ Confirm Receipt Details</h1>
+    <a href="/">← Back to Home</a>
+
+    <!-- templates/testing/confirm_receipt.html -->
+    <div class="ai-results">
+        <h3>🤖 AI Scan Results</h3>
+
+        <div class="confidence-badge"
+            style="background: {% if pending_data.confidence == 'high' %}#28a745{% else %}#ffc107{% endif %}; color: white; padding: 5px 10px; border-radius: 15px; display: inline-block;">
+            Confidence: {{ pending_data.confidence|title }}
+        </div>
+
+        <div class="scan-details">
+            <p><strong>💰 Amount:</strong> ${{ pending_data.amount|floatformat:2 }}</p>
+            <p><strong>🏪 Merchant:</strong> {{ pending_data.merchant }}</p>
+            <p><strong>📅 Date:</strong> {{ pending_data.date }}</p>
+
+            {% if pending_data.tax %}
+            <p><strong>🧾 Tax:</strong> ${{ pending_data.tax|floatformat:2 }}</p>
+            {% endif %}
+
+            {% if pending_data.category %}
+            <p><strong>📂 Detected Category:</strong> {{ pending_data.category }}</p>
+            {% endif %}
+        </div>
+
+        {% if pending_data.line_items %}
+        <div class="line-items">
+            <h4>🛒 Items Found:</h4>
+            <ul>
+                {% for item in pending_data.line_items %}
+                <li>{{ item.description }}: ${{ item.total|floatformat:2 }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="amount">Amount ($):</label>
+            <input type="number" step="0.01" name="amount" value="{{ pending_data.amount|default:'' }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="merchant">Merchant:</label>
+            <input type="text" name="merchant" value="{{ pending_data.merchant|default:'' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="date">Date:</label>
+            <input type="date" name="date" value="{{ pending_data.date|default:'' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="category">Category:</label>
+            <select name="category">
+                <option value="">-- Select Category --</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <textarea name="description" rows="3">Receipt from {{ pending_data.merchant|default:"merchant" }}</textarea>
+        </div>
+
+        <button type="submit" class="btn">💾 Save Expense</button>
+        <a href="{% url 'upload_receipt' %}" style="margin-left: 10px;">🔄 Scan Again</a>
+    </form>
+</body>
+
+</html>

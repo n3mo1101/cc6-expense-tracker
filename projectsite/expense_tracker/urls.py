@@ -8,4 +8,6 @@ urlpatterns = [
     path('charts/', views.quickchart_dashboard, name='charts'),  # New charts page
     path('login/', auth_views.LoginView.as_view(template_name='expense_tracker/login.html'), name='login'),
     path('logout/', views.logout_view, name='logout'),
+    path('upload-receipt/', views.upload_receipt, name='upload_receipt'),
+    path('confirm-receipt/', views.confirm_receipt, name='confirm_receipt'),
 ]

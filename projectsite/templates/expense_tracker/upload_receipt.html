@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scan Receipt</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .upload-area { 
+            border: 2px dashed #ccc; 
+            padding: 40px; 
+            text-align: center; 
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .btn { 
+            background: #007bff; 
+            color: white; 
+            padding: 10px 20px; 
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>📄 Scan Receipt</h1>
+    <a href="/">← Back to Home</a>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div style="color: {% if message.tags == 'error' %}red{% else %}green{% endif %}; margin: 20px 0;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="upload-area">
+            <h3>Upload Receipt Image</h3>
+            <p>Take a clear photo of your receipt</p>
+            <input type="file" name="receipt_image" accept="image/*" required>
+            <p><small>Supported: JPEG, PNG, GIF (max 5MB)</small></p>
+        </div>
+
+        <button type="submit" class="btn">🔍 Scan Receipt</button>
+    </form>
+
+    <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+        <h4>💡 Tips for Best Results:</h4>
+        <ul>
+            <li>Ensure good lighting</li>
+            <li>Place receipt on flat surface</li>
+            <li>Capture entire receipt in frame</li>
+            <li>Avoid glare and shadows</li>
+        </ul>
+    </div>
+</body>
+</html>
