@@ -2,15 +2,16 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.generic.list import ListView
+from expense_tracker.models import Expense
+from django.contrib.auth.mixins import LoginRequiredMixin
 
-# Display dashboard 
-@login_required
-def dashboard(request):
-    context = {
-        'page_title': 'Dashboard',
-        # Add your data here
-    }
-    return render(request, 'index.html', context)
+
+class HomePageView(LoginRequiredMixin, ListView):
+    model = Expense
+    context_object_name = 'home'
+    template_name = 'home.html'
+
 
 # Add your login view function
 def login_view(request):
@@ -21,7 +22,7 @@ def login_view(request):
         
         if user is not None:
             login(request, user)
-            return redirect('dashboard')  # Redirect to view data page after login
+            return redirect('home')  # Redirect to view data page after login
         else:
             messages.error(request, 'Invalid username or password.')
     

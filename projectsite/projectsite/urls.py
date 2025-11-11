@@ -1,12 +1,12 @@
 from django.contrib import admin
 from django.urls import path
 from expense_tracker import views
+from expense_tracker.views import HomePageView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('index/', views.dashboard, name='dashboard'),
+    path('', views.HomePageView.as_view(), name='home'),
 
-    path('', views.login_view, name='home'),  # Make login the home page
     path('login/', views.login_view, name='login'),
-     path('logout/', views.logout_view, name='logout'),
+    path('logout/', views.logout_view, name='logout'),
 ]
