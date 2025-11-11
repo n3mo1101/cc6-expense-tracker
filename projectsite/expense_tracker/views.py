@@ -1,12 +1,13 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
+
 from django.views.generic.list import ListView
 from expense_tracker.models import Expense
-from django.contrib.auth.mixins import LoginRequiredMixin
 
-
+# Home page view
 class HomePageView(LoginRequiredMixin, ListView):
     model = Expense
     context_object_name = 'home'
@@ -26,7 +27,8 @@ def login_view(request):
         else:
             messages.error(request, 'Invalid username or password.')
     
-    return render(request, 'testing/login.html')
+    return render(request, 'account/login.html')
+
 
 def logout_view(request):
     """Simple logout view"""
