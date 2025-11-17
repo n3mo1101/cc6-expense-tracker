@@ -1,0 +1,518 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Budget Tracker{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Progress Bar Styles */
+    .budget-meter {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+
+    .budget-meter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .budget-amount {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .budget-label {
+        font-size: 14px;
+        color: #64748b;
+        margin-bottom: 5px;
+    }
+
+    .progress-container {
+        position: relative;
+        height: 30px;
+        background: #e2e8f0;
+        border-radius: 15px;
+        overflow: hidden;
+        margin-bottom: 15px;
+    }
+
+    .progress-bar {
+        height: 100%;
+        border-radius: 15px;
+        transition: width 0.5s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-bar.success {
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    }
+
+    .progress-bar.warning {
+        background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    .progress-bar.danger {
+        background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    .progress-bar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+
+    .progress-stats {
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+    }
+
+    .progress-stats span {
+        color: #64748b;
+    }
+
+    /* Recent Transactions List */
+    .transaction-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .transaction-item {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid #e2e8f0;
+        transition: background 0.3s;
+    }
+
+    .transaction-item:last-child {
+        border-bottom: none;
+    }
+
+    .transaction-item:hover {
+        background: #f8fafc;
+    }
+
+    .transaction-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-size: 20px;
+    }
+
+    .transaction-icon.expense {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+
+    .transaction-icon.income {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .transaction-details {
+        flex: 1;
+    }
+
+    .transaction-category {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 3px;
+    }
+
+    .transaction-date {
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .transaction-amount {
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .transaction-amount.expense {
+        color: #ef4444;
+    }
+
+    .transaction-amount.income {
+        color: #10b981;
+    }
+
+    /* Chart Container */
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-top: 20px;
+    }
+
+    /* Category Spending */
+    .category-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .category-item:last-child {
+        border-bottom: none;
+    }
+
+    .category-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .category-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+    }
+
+    .category-name {
+        font-weight: 500;
+        color: #1e293b;
+    }
+
+    .category-amount {
+        font-weight: 600;
+        color: #64748b;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #94a3b8;
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+
+    /* Action Buttons */
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .quick-actions {
+            flex-direction: column;
+        }
+
+        .budget-amount {
+            font-size: 24px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+        }
+
+        .chart-container {
+            height: 250px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1 style="font-size: 28px; font-weight: 700; color: #1e293b; margin: 0;">Dashboard</h1>
+    <p style="color: #64748b; margin-top: 5px;">Welcome back, {{ user.username }}! Here's your financial overview.</p>
+</div>
+
+<!-- Budget Meter -->
+<div class="budget-meter">
+    <div class="budget-meter-header">
+        <div>
+            <div class="budget-label">Available Budget</div>
+            <div class="budget-amount">₱{{ available_budget|default:"0.00" }}</div>
+        </div>
+        <div style="text-align: right;">
+            <div class="budget-label">Total Budget</div>
+            <div style="font-size: 20px; font-weight: 600; color: #64748b;">₱{{ total_budget|default:"0.00" }}</div>
+        </div>
+    </div>
+    
+    <div class="progress-container">
+        <div class="progress-bar {{ budget_status|default:'success' }}" 
+             style="width: {{ budget_percentage|default:0 }}%;">
+        </div>
+    </div>
+    
+    <div class="progress-stats">
+        <span>Spent: ₱{{ total_spent|default:"0.00" }} ({{ budget_percentage|default:0 }}%)</span>
+        <span>{{ days_remaining|default:"0" }} days remaining</span>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i data-lucide="wallet"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-label">Total Income</div>
+                <div class="stat-value">₱{{ total_income|default:"0.00" }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon danger">
+                <i data-lucide="trending-down"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-label">Total Expenses</div>
+                <div class="stat-value">₱{{ total_expenses|default:"0.00" }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i data-lucide="piggy-bank"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-label">Net Savings</div>
+                <div class="stat-value">₱{{ net_savings|default:"0.00" }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i data-lucide="receipt"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-label">Transactions</div>
+                <div class="stat-value">{{ total_transactions|default:"0" }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts and Recent Activity -->
+<div class="row mt-4">
+    <!-- Spending Trend Chart -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Monthly Spending Trend</h3>
+                <select id="chartPeriod" class="btn btn-sm" style="background: #f1f5f9;">
+                    <option value="7">Last 7 Days</option>
+                    <option value="30" selected>Last 30 Days</option>
+                    <option value="90">Last 3 Months</option>
+                </select>
+            </div>
+            <div class="chart-container">
+                <canvas id="spendingChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Category Breakdown -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Top Categories</h3>
+                <a href="{% url 'analytics' %}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            {% if top_categories %}
+                <div style="padding: 10px 0;">
+                    {% for category in top_categories %}
+                    <div class="category-item">
+                        <div class="category-info">
+                            <div class="category-color" style="background: {{ category.color }};"></div>
+                            <span class="category-name">{{ category.name }}</span>
+                        </div>
+                        <span class="category-amount">₱{{ category.amount }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i data-lucide="inbox"></i>
+                    <p>No category data yet</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Recent Transactions</h3>
+                <a href="{% url 'transactions' %}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            {% if recent_transactions %}
+                <ul class="transaction-list">
+                    {% for transaction in recent_transactions %}
+                    <li class="transaction-item">
+                        <div class="transaction-icon {{ transaction.type }}">
+                            {% if transaction.type == 'income' %}
+                                <i data-lucide="arrow-up"></i>
+                            {% else %}
+                                <i data-lucide="arrow-down"></i>
+                            {% endif %}
+                        </div>
+                        <div class="transaction-details">
+                            <div class="transaction-category">{{ transaction.category }}</div>
+                            <div class="transaction-date">{{ transaction.date|date:"M d, Y" }}</div>
+                        </div>
+                        <div class="transaction-amount {{ transaction.type }}">
+                            {% if transaction.type == 'income' %}+{% else %}-{% endif %}₱{{ transaction.amount }}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="empty-state">
+                    <i data-lucide="inbox"></i>
+                    <p>No transactions yet. Start tracking your finances!</p>
+                    <div class="quick-actions" style="justify-content: center; margin-top: 20px;">
+                        <a href="{% url 'income' %}" class="btn btn-primary">Add Income</a>
+                        <a href="{% url 'expenses' %}" class="btn btn-primary">Add Expense</a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+{% if recent_transactions %}
+<div class="quick-actions" style="justify-content: center; margin-top: 30px;">
+    <a href="{% url 'income' %}" class="btn btn-primary">
+        <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: 5px;"></i>
+        Add Income
+    </a>
+    <a href="{% url 'expenses' %}" class="btn btn-primary">
+        <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: 5px;"></i>
+        Add Expense
+    </a>
+    <a href="{% url 'budgets' %}" class="btn btn-primary">
+        <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: 5px;"></i>
+        Create Budget
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Re-initialize Lucide icons after content load
+    lucide.createIcons();
+
+    // Sample data - Replace with actual data from Django context
+    const spendingData = {
+        labels: {{ chart_labels|safe|default:"[]" }},
+        datasets: [{
+            label: 'Expenses',
+            data: {{ chart_expenses|safe|default:"[]" }},
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            tension: 0.4,
+            fill: true
+        }, {
+            label: 'Income',
+            data: {{ chart_income|safe|default:"[]" }},
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    };
+
+    // Create Chart
+    const ctx = document.getElementById('spendingChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: spendingData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₱' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
