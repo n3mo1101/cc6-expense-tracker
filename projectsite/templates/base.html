@@ -1,471 +1,412 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="BudgetPro - Smart Budget Tracking Application">
     <title>{% block title %}MoneyLens{% endblock %}</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Template CSS -->
     <link rel="stylesheet" href="{% static 'admin_template/css/main-DLfE7m78.css' %}">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
     
-    <!-- Custom CSS -->
     <style>
-        :root {
-            --primary-color: #667eea;
-            --secondary-color: #764ba2;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --warning-color: #f59e0b;
-            --info-color: #3b82f6;
-        }
-
-        /* Sidebar Styles */
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            width: 260px;
-            background: linear-gradient(135deg, #08978b 0%, #000000 100%);
-            color: white;
-            transition: all 0.3s ease;
-            z-index: 1000;
-            overflow-y: auto;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-        }
-
-        .sidebar.collapsed {
-            width: 70px;
-        }
-
-        .sidebar-header {
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .sidebar-header h3 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 700;
-            transition: opacity 0.3s;
-        }
-
-        .sidebar.collapsed .sidebar-header h3 {
-            opacity: 0;
-            position: absolute;
-        }
-
-        .sidebar-menu {
+        /* Transaction List Styles */
+        .transaction-list {
             list-style: none;
-            padding: 20px 0;
+            padding: 0;
             margin: 0;
         }
-
-        .sidebar-menu li {
-            margin: 5px 0;
-        }
-
-        .sidebar-menu a {
+        
+        .transaction-item {
             display: flex;
             align-items: center;
-            padding: 12px 20px;
-            color: rgba(255,255,255,0.8);
-            text-decoration: none;
-            transition: all 0.3s;
-            position: relative;
+            padding: 1rem;
+            border-bottom: 1px solid var(--bs-border-color);
+            transition: background-color 0.2s ease;
         }
-
-        .sidebar-menu a:hover,
-        .sidebar-menu a.active {
-            background: rgba(255,255,255,0.1);
-            color: white;
+        
+        .transaction-item:hover {
+            background-color: var(--bs-secondary-bg);
         }
-
-        .sidebar-menu a i {
-            width: 24px;
-            height: 24px;
-            margin-right: 15px;
+        
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+        
+        .transaction-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .transaction-icon.income {
+            background-color: rgba(25, 135, 84, 0.1);
+            color: var(--bs-success);
+        }
+        
+        .transaction-icon.expense {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: var(--bs-danger);
+        }
+        
+        .transaction-icon i {
             font-size: 20px;
         }
-
-        .sidebar.collapsed .sidebar-menu a span {
-            opacity: 0;
-            position: absolute;
-        }
-
-        .sidebar.collapsed .sidebar-menu a {
-            justify-content: center;
-            padding: 12px;
-        }
-
-        .sidebar.collapsed .sidebar-menu a i {
-            margin-right: 0;
-        }
-
-        /* Main Content Area */
-        .main-content {
-            margin-left: 260px;
-            min-height: 100vh;
-            background: #f8fafc;
-            transition: margin-left 0.3s ease;
-        }
-
-        .main-content.expanded {
-            margin-left: 70px;
-        }
-
-        /* Top Navigation */
-        .top-nav {
-            background: white;
-            padding: 15px 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 999;
-        }
-
-        .toggle-sidebar {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #64748b;
-            padding: 5px;
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--primary-color);
-        }
-
-        .user-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .user-name {
-            font-weight: 600;
-            color: #1e293b;
-            font-size: 14px;
-        }
-
-        .user-role {
-            font-size: 12px;
-            color: #64748b;
-        }
-
-        /* Content Container */
-        .content-container {
-            padding: 30px;
-        }
-
-        /* Cards */
-        .card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .card-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1e293b;
-            margin: 0;
-        }
-
-        /* Stats Card */
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-
-        .stat-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        .stat-icon.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .stat-icon.success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
-        .stat-icon.danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; }
-        .stat-icon.warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; }
-
-        .stat-details {
+        
+        .transaction-details {
             flex: 1;
+            min-width: 0;
         }
-
-        .stat-label {
-            font-size: 14px;
-            color: #64748b;
-            margin-bottom: 5px;
+        
+        .transaction-category {
+            font-weight: 600;
+            color: var(--bs-body-color);
+            margin-bottom: 2px;
         }
-
-        .stat-value {
-            font-size: 24px;
+        
+        .transaction-date {
+            font-size: 0.875rem;
+            color: var(--bs-secondary-color);
+        }
+        
+        .transaction-amount {
             font-weight: 700;
-            color: #1e293b;
+            font-size: 1.125rem;
+            text-align: right;
+            margin-left: 1rem;
         }
-
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-                width: 260px;
+        
+        .transaction-amount.income {
+            color: var(--bs-success);
+        }
+        
+        .transaction-amount.expense {
+            color: var(--bs-danger);
+        }
+        
+        /* Mobile responsiveness for transactions */
+        @media (max-width: 576px) {
+            .transaction-item {
+                padding: 0.75rem;
             }
-
-            .sidebar.mobile-open {
-                transform: translateX(0);
+            
+            .transaction-icon {
+                width: 40px;
+                height: 40px;
+                margin-right: 0.75rem;
             }
-
-            .sidebar.collapsed {
-                transform: translateX(-100%);
+            
+            .transaction-icon i {
+                font-size: 18px;
             }
-
-            .main-content {
-                margin-left: 0;
+            
+            .transaction-category {
+                font-size: 0.9375rem;
             }
-
-            .main-content.expanded {
-                margin-left: 0;
+            
+            .transaction-date {
+                font-size: 0.8125rem;
             }
-
-            .content-container {
-                padding: 15px;
-            }
-
-            .top-nav {
-                padding: 15px;
-            }
-
-            .user-info {
-                display: none;
-            }
-
-            .sidebar-overlay {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.5);
-                z-index: 999;
-            }
-
-            .sidebar-overlay.active {
-                display: block;
+            
+            .transaction-amount {
+                font-size: 1rem;
             }
         }
-
-        /* Grid System */
-        .row {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0 -10px;
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1.5rem;
         }
-
-        .col-md-3, .col-md-4, .col-md-6, .col-md-8, .col-md-12 {
-            padding: 0 10px;
-            margin-bottom: 20px;
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--bs-secondary-color);
+            margin-bottom: 1rem;
+            opacity: 0.5;
         }
-
-        .col-md-3 { flex: 0 0 25%; max-width: 25%; }
-        .col-md-4 { flex: 0 0 33.333%; max-width: 33.333%; }
-        .col-md-6 { flex: 0 0 50%; max-width: 50%; }
-        .col-md-8 { flex: 0 0 66.666%; max-width: 66.666%; }
-        .col-md-12 { flex: 0 0 100%; max-width: 100%; }
-
-        @media (max-width: 768px) {
-            .col-md-3, .col-md-4, .col-md-6, .col-md-8, .col-md-12 {
-                flex: 0 0 100%;
-                max-width: 100%;
-            }
+        
+        .empty-state p {
+            color: var(--bs-secondary-color);
+            margin-bottom: 1.5rem;
         }
-
-        /* Utility Classes */
-        .mb-4 { margin-bottom: 1.5rem; }
-        .mt-4 { margin-top: 1.5rem; }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
     </style>
-
+    
     {% block extra_css %}{% endblock %}
 </head>
-<body>
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h3>MoneyLens</h3>
-        </div>
-        <ul class="sidebar-menu">
-            <li>
-                <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
-                    <i data-lucide="layout-dashboard"></i>
-                    <span>Dashboard</span>
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'transactions' %}" class="{% if request.resolver_match.url_name == 'transactions' %}active{% endif %}">
-                    <i data-lucide="receipt"></i>
-                    <span>Transactions</span>
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'analytics' %}" class="{% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
-                    <i data-lucide="bar-chart-2"></i>
-                    <span>Analytics</span>
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'income' %}" class="{% if request.resolver_match.url_name == 'income' %}active{% endif %}">
-                    <i data-lucide="trending-up"></i>
-                    <span>Income</span>
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'expenses' %}" class="{% if request.resolver_match.url_name == 'expenses' %}active{% endif %}">
-                    <i data-lucide="trending-down"></i>
-                    <span>Expenses</span>
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'budgets' %}" class="{% if request.resolver_match.url_name == 'budgets' %}active{% endif %}">
-                    <i data-lucide="wallet"></i>
-                    <span>Budgets</span>
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'categories' %}" class="{% if request.resolver_match.url_name == 'categories' %}active{% endif %}">
-                    <i data-lucide="tag"></i>
-                    <span>Categories</span>
-                </a>
-            </li>
-            <li style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-                <a href="{% url 'logout' %}">
-                    <i data-lucide="log-out"></i>
-                    <span>Logout</span>
-                </a>
-            </li>
-        </ul>
-    </aside>
 
-    <!-- Sidebar Overlay for Mobile -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+<body data-page="dashboard" class="admin-layout">
+    <!-- Main Wrapper -->
+    <div class="admin-wrapper" id="admin-wrapper">
+        
+        <!-- Header -->
+        <header class="admin-header">
+            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+                <div class="container-fluid">
+                    <!-- Logo/Brand -->
+                    <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+                        <span class="fs-3 me-2"></span>
+                        <h1 class="h4 mb-0 fw-bold text-primary">MoneyLens</h1>
+                    </a>
 
-    <!-- Main Content -->
-    <main class="main-content" id="mainContent">
-        <!-- Top Navigation -->
-        <nav class="top-nav">
-            <button class="toggle-sidebar" id="toggleSidebar">
-                <i data-lucide="menu"></i>
-            </button>
-            
-            <div class="user-profile">
-                <div class="user-info">
-                    <span class="user-name">{{ user.username }}</span>
-                    <span class="user-role">{{ user.email }}</span>
+                    <!-- Search Bar - Hidden on mobile -->
+                    <div class="search-container flex-grow-1 mx-4 d-none d-md-block">
+                        <div class="position-relative">
+                            <input type="search" 
+                                   class="form-control" 
+                                   placeholder="Search transactions..."
+                                   aria-label="Search">
+                            <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-3"></i>
+                        </div>
+                    </div>
+
+                    <!-- Right Side Icons -->
+                    <div class="navbar-nav flex-row">
+                        <!-- Theme Toggle -->
+                        <button class="btn btn-outline-secondary me-2" 
+                                type="button" 
+                                id="themeToggle"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="bottom"
+                                title="Toggle theme">
+                            <i class="bi bi-sun-fill" id="themeIconLight"></i>
+                            <i class="bi bi-moon-fill d-none" id="themeIconDark"></i>
+                        </button>
+
+                        <!-- Notifications -->
+                        <div class="dropdown me-2">
+                            <button class="btn btn-outline-secondary position-relative" 
+                                    type="button" 
+                                    data-bs-toggle="dropdown" 
+                                    aria-expanded="false">
+                                <i class="bi bi-bell"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    3
+                                </span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><h6 class="dropdown-header">Notifications</h6></li>
+                                <li><a class="dropdown-item" href="#">New transaction added</a></li>
+                                <li><a class="dropdown-item" href="#">Budget limit reached</a></li>
+                                <li><a class="dropdown-item" href="#">Monthly report ready</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-center" href="#">View all notifications</a></li>
+                            </ul>
+                        </div>
+
+                        <!-- User Menu -->
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary d-flex align-items-center" 
+                                    type="button" 
+                                    data-bs-toggle="dropdown" 
+                                    aria-expanded="false">
+                                <img src="{% if user.profile.profile_picture %}{{ user.profile.avatar_url }}{% else %}https://via.placeholder.com/32{% endif %}" 
+                                     alt="User Avatar" 
+                                     width="24" 
+                                     height="24" 
+                                     class="rounded-circle me-2">
+                                <span class="d-none d-md-inline">{{ user.username }}</span>
+                                <i class="bi bi-chevron-down ms-1"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-                <img src="{% if user.profile.profile_picture %}{{ user.profile.avatar_url }}{% else %}{% static 'avatars/avatar1.png' %}{% endif %}" 
-                     alt="User Avatar" class="user-avatar">
+            </nav>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="admin-sidebar">
+            <div class="sidebar-content">
+                <nav class="sidebar-nav">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">
+                                <i class="bi bi-speedometer2"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'transactions' %}active{% endif %}" href="{% url 'transactions' %}">
+                                <i class="bi bi-receipt"></i>
+                                <span>Transactions</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}" href="{% url 'analytics' %}">
+                                <i class="bi bi-graph-up"></i>
+                                <span>Analytics</span>
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item mt-3">
+                            <small class="text-muted px-3 text-uppercase fw-bold">Management</small>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'income' %}active{% endif %}" href="{% url 'income' %}">
+                                <i class="bi bi-arrow-up-circle"></i>
+                                <span>Income</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'expenses' %}active{% endif %}" href="{% url 'expenses' %}">
+                                <i class="bi bi-arrow-down-circle"></i>
+                                <span>Expenses</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'budgets' %}active{% endif %}" href="{% url 'budgets' %}">
+                                <i class="bi bi-wallet2"></i>
+                                <span>Budgets</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'categories' %}active{% endif %}" href="{% url 'categories' %}">
+                                <i class="bi bi-tags"></i>
+                                <span>Categories</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
             </div>
-        </nav>
+        </aside>
 
-        <!-- Page Content -->
-        <div class="content-container">
-            {% if messages %}
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}" role="alert">
-                    {{ message }}
+        <!-- Floating Hamburger Menu -->
+        <button class="hamburger-menu" 
+                type="button" 
+                data-sidebar-toggle
+                aria-label="Toggle sidebar">
+            <i class="bi bi-list"></i>
+        </button>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="container-fluid p-3 p-md-4 p-lg-5">
+                <!-- Alerts -->
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-{% if message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'success' %}check-circle{% else %}info-circle{% endif %}-fill me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <!-- Dynamic Content -->
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="admin-footer">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-0 text-muted">© 2025 BudgetPro</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <p class="mb-0 text-muted">Smart Budget Tracking</p>
+                    </div>
                 </div>
-                {% endfor %}
-            {% endif %}
+            </div>
+        </footer>
+    </div>
 
-            {% block content %}{% endblock %}
-        </div>
-    </main>
-
-    <!-- Template JS -->
-    <script src="{% static 'admin_template/js/lucide-BHdLc77k.js' %}"></script>
-    <script src="{% static 'admin_template/js/main-f0Mg-34g.js' %}"></script>
-
-    <!-- Custom JS -->
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom Scripts -->
     <script>
-        // Initialize Lucide icons
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            // Sidebar Toggle
+            const toggleButton = document.querySelector('[data-sidebar-toggle]');
+            const wrapper = document.getElementById('admin-wrapper');
 
-        // Sidebar Toggle
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('mainContent');
-        const toggleBtn = document.getElementById('toggleSidebar');
-        const overlay = document.getElementById('sidebarOverlay');
+            if (toggleButton && wrapper) {
+                // Set initial state from localStorage
+                const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+                if (isCollapsed) {
+                    wrapper.classList.add('sidebar-collapsed');
+                    toggleButton.classList.add('is-active');
+                }
 
-        toggleBtn.addEventListener('click', () => {
-            if (window.innerWidth <= 768) {
-                // Mobile: slide sidebar in/out
-                sidebar.classList.toggle('mobile-open');
-                overlay.classList.toggle('active');
-            } else {
-                // Desktop: collapse/expand
-                sidebar.classList.toggle('collapsed');
-                mainContent.classList.toggle('expanded');
+                // Attach click listener
+                toggleButton.addEventListener('click', () => {
+                    const isCurrentlyCollapsed = wrapper.classList.contains('sidebar-collapsed');
+                    
+                    if (isCurrentlyCollapsed) {
+                        wrapper.classList.remove('sidebar-collapsed');
+                        toggleButton.classList.remove('is-active');
+                        localStorage.setItem('sidebar-collapsed', 'false');
+                    } else {
+                        wrapper.classList.add('sidebar-collapsed');
+                        toggleButton.classList.add('is-active');
+                        localStorage.setItem('sidebar-collapsed', 'true');
+                    }
+                });
             }
-        });
 
-        // Close sidebar when clicking overlay (mobile)
-        overlay.addEventListener('click', () => {
-            sidebar.classList.remove('mobile-open');
-            overlay.classList.remove('active');
-        });
+            // Theme Toggle
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIconLight = document.getElementById('themeIconLight');
+            const themeIconDark = document.getElementById('themeIconDark');
+            const html = document.documentElement;
 
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            if (window.innerWidth > 768) {
-                sidebar.classList.remove('mobile-open');
-                overlay.classList.remove('active');
+            // Get saved theme or default to light
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            html.setAttribute('data-bs-theme', savedTheme);
+            
+            // Update icon based on saved theme
+            if (savedTheme === 'dark') {
+                themeIconLight.classList.add('d-none');
+                themeIconDark.classList.remove('d-none');
             }
+
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    const currentTheme = html.getAttribute('data-bs-theme');
+                    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                    
+                    html.setAttribute('data-bs-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                    
+                    // Toggle icons
+                    if (newTheme === 'dark') {
+                        themeIconLight.classList.add('d-none');
+                        themeIconDark.classList.remove('d-none');
+                    } else {
+                        themeIconLight.classList.remove('d-none');
+                        themeIconDark.classList.add('d-none');
+                    }
+                });
+            }
+
+            // Initialize Bootstrap tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
         });
     </script>
 
