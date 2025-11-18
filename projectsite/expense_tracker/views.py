@@ -159,10 +159,17 @@ def dashboard_view(request):
     
     # Sort by date descending
     transactions.sort(key=lambda x: x['date'], reverse=True)
-    recent_transactions = transactions[:10]
+    recent_transactions = transactions[:7]
     
     # Prepare chart data (last 30 days)
-    chart_data = prepare_chart_data(user, days=30)
+    chart_data = prepare_chart_data(user, months=1)
+    
+    # Prepare category data for donut chart
+    category_chart_data = []
+    category_chart_labels = []
+    for cat in categories_with_colors:
+        category_chart_data.append(cat['amount'])
+        category_chart_labels.append(cat['name'])
     
     context = {
         'total_budget': f"{total_budget:.2f}",
@@ -179,47 +186,47 @@ def dashboard_view(request):
         'recent_transactions': recent_transactions,
         'chart_labels': json.dumps(chart_data['labels']),
         'chart_expenses': json.dumps(chart_data['expenses']),
-        'chart_income': json.dumps(chart_data['income']),
+        # 'chart_income': json.dumps(chart_data['income']),
+        'category_data': json.dumps(category_chart_data),
+        'category_labels': json.dumps(category_chart_labels),
     }
     
     return render(request, 'dashboard.html', context)
 
 
-def prepare_chart_data(user, days=30):
-    """Prepare data for spending trend chart"""
+def prepare_chart_data(user, months=12):
+    """Prepare monthly data for spending trend chart"""
     today = timezone.now().date()
-    start_date = today - timedelta(days=days)
     
     # Initialize data structures
     labels = []
     expenses_data = []
-    income_data = []
     
-    # Generate date range
-    current_date = start_date
-    while current_date <= today:
-        labels.append(current_date.strftime('%b %d'))
+    # Generate last 12 months
+    for i in range(months - 1, -1, -1):
+        # Calculate the month
+        month_date = today.replace(day=1) - timedelta(days=i * 30)
+        month_start = month_date.replace(day=1)
         
-        # Get expenses for this date
-        daily_expenses = Expense.objects.filter(
+        # Get last day of month
+        if month_date.month == 12:
+            month_end = month_date.replace(year=month_date.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            month_end = month_date.replace(month=month_date.month + 1, day=1) - timedelta(days=1)
+        
+        labels.append(month_start.strftime('%b'))
+        
+        # Get expenses for this month
+        monthly_expenses = Expense.objects.filter(
             user=user,
-            expense_date=current_date
+            expense_date__gte=month_start,
+            expense_date__lte=month_end
         ).aggregate(total=Sum('amount'))['total'] or 0
-        expenses_data.append(float(daily_expenses))
-        
-        # Get income for this date
-        daily_income = Income.objects.filter(
-            user=user,
-            income_date=current_date
-        ).aggregate(total=Sum('amount'))['total'] or 0
-        income_data.append(float(daily_income))
-        
-        current_date += timedelta(days=1)
+        expenses_data.append(float(monthly_expenses))
     
     return {
         'labels': labels,
-        'expenses': expenses_data,
-        'income': income_data
+        'expenses': expenses_data
     }
 
 
