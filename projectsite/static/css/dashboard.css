@@ -1,0 +1,71 @@
+/* Mobile-specific adjustments */
+@media (max-width: 576px) {
+    /* Page header buttons - center and full width */
+    .header-actions {
+        width: 100%;
+    }
+    
+    .header-actions .btn {
+        flex: 1;
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    /* Budget card - smaller text */
+    .budget-available {
+        font-size: 2rem !important;
+    }
+    
+    .budget-total {
+        font-size: 1.5rem !important;
+    }
+    
+    /* Stats cards - adjust font sizes */
+    .stats-card .stat-icon {
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    .stats-card .stat-icon i {
+        font-size: 1.125rem !important;
+    }
+    
+    .stats-card h6 {
+        font-size: 0.75rem !important;
+    }
+    
+    .stats-card h3 {
+        font-size: 1.25rem !important;
+    }
+    
+    .stats-card small {
+        font-size: 0.7rem !important;
+    }
+    
+    /* Progress bar percentage text */
+    .progress-bar span {
+        font-size: 0.75rem;
+    }
+    
+    /* Chart titles */
+    .card-title {
+        font-size: 1rem !important;
+    }
+    
+    /* Button group */
+    .btn-group-sm .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Stats cards spacing */
+    .stats-card .flex-grow-1 {
+        min-width: 0;
+    }
+    
+    .stats-card h3 {
+        font-size: 1.5rem;
+    }
+}
