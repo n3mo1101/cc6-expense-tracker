@@ -1,32 +1,122 @@
 {% if is_paginated %}
-<div class="d-flex justify-content-between align-items-center">
-    <div class="pagination-info">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+    <!-- Info text - hidden on mobile -->
+    <div class="pagination-info d-none d-md-block">
         Showing {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ paginator.count }} transactions
     </div>
-    <div class="pagination-controls">
-        {% if page_obj.has_previous %}
-        <button onclick="goToPage(1)" class="btn btn-sm btn-outline-secondary">
+    
+    <!-- Pagination controls - centered on mobile, right-aligned on desktop -->
+    <div class="pagination-controls d-flex justify-content-center justify-content-md-end flex-wrap gap-1">
+        <!-- First page -->
+        <button onclick="goToPage(1)" 
+                class="btn btn-sm btn-outline-secondary"
+                {% if not page_obj.has_previous %}disabled{% endif %}>
             <i class="bi bi-chevron-double-left"></i>
         </button>
-        <button onclick="goToPage({{ page_obj.previous_page_number }})" class="btn btn-sm btn-outline-secondary">
+        
+        <!-- Previous page -->
+        {% if page_obj.has_previous %}
+        <button onclick="goToPage({{ page_obj.previous_page_number }})" 
+                class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+        {% else %}
+        <button class="btn btn-sm btn-outline-secondary" disabled>
             <i class="bi bi-chevron-left"></i>
         </button>
         {% endif %}
         
-        <div>
-            <span class="btn btn-sm btn-primary">
-                {{ page_obj.number }}
-            </span>
-            
-            {% if page_obj.has_next %}
-            <button onclick="goToPage({{ page_obj.next_page_number }})" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-chevron-right"></i>
-            </button>
-            <button onclick="goToPage({{ paginator.num_pages }})" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-chevron-double-right"></i>
-            </button>
-        </div>
+        <!-- Page numbers -->
+        {% if paginator.num_pages <= 7 %}
+            <!-- Show all pages if 7 or less -->
+            {% for num in paginator.page_range %}
+                <button onclick="goToPage({{ num }})" 
+                        class="btn btn-sm {% if num == page_obj.number %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                    {{ num }}
+                </button>
+            {% endfor %}
+        {% else %}
+            <!-- Show smart pagination for more than 7 pages -->
+            {% if page_obj.number <= 4 %}
+                <!-- Near start: show first 5, ellipsis, last -->
+                {% for num in paginator.page_range %}
+                    {% if num <= 5 %}
+                    <button onclick="goToPage({{ num }})" 
+                            class="btn btn-sm {% if num == page_obj.number %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                        {{ num }}
+                    </button>
+                    {% endif %}
+                {% endfor %}
+                <span class="btn btn-sm btn-outline-secondary disabled">...</span>
+                <button onclick="goToPage({{ paginator.num_pages }})" 
+                        class="btn btn-sm btn-outline-secondary">
+                    {{ paginator.num_pages }}
+                </button>
+            {% elif page_obj.number >= paginator.num_pages|add:'-3' %}
+                <!-- Near end: show first, ellipsis, last 5 -->
+                <button onclick="goToPage(1)" 
+                        class="btn btn-sm btn-outline-secondary">
+                    1
+                </button>
+                <span class="btn btn-sm btn-outline-secondary disabled">...</span>
+                {% for num in paginator.page_range %}
+                    {% if num >= paginator.num_pages|add:'-4' %}
+                    <button onclick="goToPage({{ num }})" 
+                            class="btn btn-sm {% if num == page_obj.number %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                        {{ num }}
+                    </button>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <!-- In middle: show first, ellipsis, current-1, current, current+1, ellipsis, last -->
+                <button onclick="goToPage(1)" 
+                        class="btn btn-sm btn-outline-secondary">
+                    1
+                </button>
+                <span class="btn btn-sm btn-outline-secondary disabled">...</span>
+                <button onclick="goToPage({{ page_obj.number|add:'-1' }})" 
+                        class="btn btn-sm btn-outline-secondary">
+                    {{ page_obj.number|add:'-1' }}
+                </button>
+                <button onclick="goToPage({{ page_obj.number }})" 
+                        class="btn btn-sm btn-primary">
+                    {{ page_obj.number }}
+                </button>
+                <button onclick="goToPage({{ page_obj.number|add:'1' }})" 
+                        class="btn btn-sm btn-outline-secondary">
+                    {{ page_obj.number|add:'1' }}
+                </button>
+                <span class="btn btn-sm btn-outline-secondary disabled">...</span>
+                <button onclick="goToPage({{ paginator.num_pages }})" 
+                        class="btn btn-sm btn-outline-secondary">
+                    {{ paginator.num_pages }}
+                </button>
+            {% endif %}
         {% endif %}
+        
+        <!-- Next page -->
+        {% if page_obj.has_next %}
+        <button onclick="goToPage({{ page_obj.next_page_number }})" 
+                class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-chevron-right"></i>
+        </button>
+        {% else %}
+        <button class="btn btn-sm btn-outline-secondary" disabled>
+            <i class="bi bi-chevron-right"></i>
+        </button>
+        {% endif %}
+        
+        <!-- Last page -->
+        <button onclick="goToPage({{ paginator.num_pages }})" 
+                class="btn btn-sm btn-outline-secondary"
+                {% if not page_obj.has_next %}disabled{% endif %}>
+            <i class="bi bi-chevron-double-right"></i>
+        </button>
+    </div>
+    
+    <!-- Info text shown on mobile instead -->
+    <div class="pagination-info-mobile d-md-none text-center small text-muted">
+        Page {{ page_obj.number }} of {{ paginator.num_pages }}
     </div>
 </div>
 {% endif %}
