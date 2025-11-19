@@ -5,9 +5,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum, Count, Q, F, Value, CharField
 from django.utils import timezone
 from datetime import timedelta, datetime
+from django.db import models
 import json
 
 from expense_tracker.models import (
@@ -161,8 +162,8 @@ def dashboard_view(request):
     transactions.sort(key=lambda x: x['date'], reverse=True)
     recent_transactions = transactions[:7]
     
-    # Prepare chart data (last 30 days)
-    chart_data = prepare_chart_data(user, months=1)
+    # # Prepare chart data (last 30 days)
+    # chart_data = prepare_chart_data(user, days=30)
     
     # Prepare category data for donut chart
     category_chart_data = []
@@ -170,6 +171,9 @@ def dashboard_view(request):
     for cat in categories_with_colors:
         category_chart_data.append(cat['amount'])
         category_chart_labels.append(cat['name'])
+    
+    # Prepare monthly chart data (last 12 months)
+    chart_data = prepare_chart_data(user, months=12)
     
     context = {
         'total_budget': f"{total_budget:.2f}",
@@ -184,9 +188,8 @@ def dashboard_view(request):
         'total_transactions': total_transactions,
         'top_categories': categories_with_colors,
         'recent_transactions': recent_transactions,
-        'chart_labels': json.dumps(chart_data['labels']),
-        'chart_expenses': json.dumps(chart_data['expenses']),
-        # 'chart_income': json.dumps(chart_data['income']),
+        'monthly_labels': json.dumps(chart_data['labels']),
+        'monthly_expenses': json.dumps(chart_data['expenses']),
         'category_data': json.dumps(category_chart_data),
         'category_labels': json.dumps(category_chart_labels),
     }
@@ -230,11 +233,139 @@ def prepare_chart_data(user, months=12):
     }
 
 
-# ===== PLACEHOLDER VIEWS FOR OTHER PAGES =====
+# ===== TRANSACTIONS VIEW =====
 @login_required
 def transactions_view(request):
-    """View all transactions (income + expenses)"""
-    return render(request, 'transactions.html')
+    """View all transactions with filtering, sorting, and pagination (AJAX-enabled)"""
+    user = request.user
+    
+    # Start with all transactions for the user
+    from django.db.models import Value, CharField
+    
+    # Get expenses with type annotation
+    expenses_qs = Expense.objects.filter(user=user).annotate(
+        type=Value('expense', output_field=CharField()),
+        category_name=F('category__name'),
+        source_name=Value('', output_field=CharField())
+    ).values(
+        'id', 'amount', 'expense_date', 'type', 'category_name', 'source_name', 'description'
+    )
+    
+    # Get income with type annotation
+    income_qs = Income.objects.filter(user=user).annotate(
+        type=Value('income', output_field=CharField()),
+        category_name=Value('', output_field=CharField()),
+        source_name=F('source')
+    ).values(
+        'id', 'amount', 'income_date', 'type', 'category_name', 'source_name', 'description'
+    )
+    
+    # Combine querysets
+    transactions = []
+    
+    for expense in expenses_qs:
+        transactions.append({
+            'id': expense['id'],
+            'type': 'expense',
+            'category': expense['category_name'],
+            'source': '',
+            'amount': expense['amount'],
+            'date': expense['expense_date'],
+            'description': expense.get('description', '')
+        })
+    
+    for income in income_qs:
+        transactions.append({
+            'id': income['id'],
+            'type': 'income',
+            'category': '',
+            'source': income['source_name'],
+            'amount': income['amount'],
+            'date': income['income_date'],
+            'description': income.get('description', '')
+        })
+    
+    # Apply filters
+    search_query = request.GET.get('search', '').strip()
+    type_filter = request.GET.get('type', '')
+    
+    # Filter by search query
+    if search_query:
+        transactions = [t for t in transactions if 
+                       search_query.lower() in t['category'].lower() or 
+                       search_query.lower() in t['source'].lower()]
+    
+    # Filter by type
+    if type_filter:
+        transactions = [t for t in transactions if t['type'] == type_filter]
+    
+    # Apply sorting
+    sort_by = request.GET.get('sort', 'date_desc')
+    
+    if sort_by == 'date_asc':
+        transactions.sort(key=lambda x: x['date'])
+    elif sort_by == 'date_desc':
+        transactions.sort(key=lambda x: x['date'], reverse=True)
+    elif sort_by == 'amount_asc':
+        transactions.sort(key=lambda x: float(x['amount']))
+    elif sort_by == 'amount_desc':
+        transactions.sort(key=lambda x: float(x['amount']), reverse=True)
+    
+    # Calculate summary stats
+    total_income = sum(float(t['amount']) for t in transactions if t['type'] == 'income')
+    total_expenses = sum(float(t['amount']) for t in transactions if t['type'] == 'expense')
+    net_balance = total_income - total_expenses
+    
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(transactions, 20)  # 20 transactions per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    # Get all categories for filter dropdown
+    categories = ExpenseCategory.objects.filter(
+        Q(is_predefined=True) | Q(user=user)
+    ).order_by('name')
+    
+    # Check if AJAX request
+    if request.GET.get('ajax'):
+        from django.http import JsonResponse
+        from django.template.loader import render_to_string
+        
+        # Render partials
+        html = render_to_string('partials/transaction_list.html', {
+            'transactions': page_obj,
+            'request': request
+        })
+        
+        pagination_html = render_to_string('partials/pagination.html', {
+            'page_obj': page_obj,
+            'paginator': paginator,
+            'is_paginated': paginator.num_pages > 1
+        })
+        
+        return JsonResponse({
+            'html': html,
+            'pagination_html': pagination_html,
+            'total_income': f"{total_income:.2f}",
+            'total_expenses': f"{total_expenses:.2f}",
+            'net_balance': f"{net_balance:.2f}",
+            'total_count': len(transactions),
+        })
+    
+    context = {
+        'transactions': page_obj,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'is_paginated': paginator.num_pages > 1,
+        'categories': categories,
+        'total_income': f"{total_income:.2f}",
+        'total_expenses': f"{total_expenses:.2f}",
+        'net_balance': f"{net_balance:.2f}",
+        'total_count': len(transactions),
+    }
+    
+    return render(request, 'transactions.html', context)
 
 
 @login_required

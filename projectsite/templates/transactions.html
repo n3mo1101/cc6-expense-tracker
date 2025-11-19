@@ -1,0 +1,609 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Transactions - BudgetPro{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Filter Section */
+    .filter-section {
+        background: var(--bs-body-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--bs-border-color);
+    }
+    
+    .filter-row {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+    
+    .filter-group {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .filter-group label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--bs-body-color);
+    }
+    
+    /* Search input with icon */
+    .search-wrapper {
+        position: relative;
+    }
+    
+    .search-wrapper input {
+        padding-right: 40px;
+    }
+    
+    .search-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--bs-secondary-color);
+        cursor: pointer;
+        font-size: 1.125rem;
+    }
+    
+    .search-icon:hover {
+        color: var(--bs-primary);
+    }
+    
+    /* Transaction List Container */
+    .transactions-container {
+        background: var(--bs-body-bg);
+        border-radius: 12px;
+        border: 1px solid var(--bs-border-color);
+        overflow: hidden;
+    }
+    
+    /* Transactions Header */
+    .transactions-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        background: var(--bs-body-bg);
+    }
+    
+    .sort-controls {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .sort-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 6px;
+        background: var(--bs-body-bg);
+        color: var(--bs-body-color);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .sort-btn:hover {
+        background: var(--bs-secondary-bg);
+        border-color: var(--bs-primary);
+    }
+    
+    .sort-btn.active {
+        background: var(--bs-primary);
+        color: white;
+        border-color: var(--bs-primary);
+    }
+    
+    .sort-btn i {
+        font-size: 0.875rem;
+    }
+    
+    /* Transaction List */
+    .transaction-list-wrapper {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    /* Custom Scrollbar */
+    .transaction-list-wrapper::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .transaction-list-wrapper::-webkit-scrollbar-track {
+        background: var(--bs-secondary-bg);
+    }
+    
+    .transaction-list-wrapper::-webkit-scrollbar-thumb {
+        background: var(--bs-border-color);
+        border-radius: 4px;
+    }
+    
+    .transaction-list-wrapper::-webkit-scrollbar-thumb:hover {
+        background: var(--bs-secondary-color);
+    }
+    
+    /* Transaction Items */
+    .transaction-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .transaction-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        transition: background-color 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .transaction-item:hover {
+        background-color: var(--bs-secondary-bg);
+    }
+    
+    .transaction-item:last-child {
+        border-bottom: none;
+    }
+    
+    .transaction-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .transaction-icon.income {
+        background-color: rgba(25, 135, 84, 0.1);
+        color: var(--bs-success);
+    }
+    
+    .transaction-icon.expense {
+        background-color: rgba(220, 53, 69, 0.1);
+        color: var(--bs-danger);
+    }
+    
+    .transaction-icon i {
+        font-size: 20px;
+    }
+    
+    .transaction-details {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .transaction-category {
+        font-weight: 600;
+        color: var(--bs-body-color);
+        margin-bottom: 2px;
+    }
+    
+    .transaction-date {
+        font-size: 0.875rem;
+        color: var(--bs-secondary-color);
+    }
+    
+    .transaction-amount {
+        font-weight: 700;
+        font-size: 1.125rem;
+        text-align: right;
+        margin-left: 1rem;
+        white-space: nowrap;
+    }
+    
+    .transaction-amount.income {
+        color: var(--bs-success);
+    }
+    
+    .transaction-amount.expense {
+        color: var(--bs-danger);
+    }
+    
+    /* Pagination */
+    .pagination-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--bs-border-color);
+        background: var(--bs-body-bg);
+    }
+    
+    .pagination-info {
+        font-size: 0.875rem;
+        color: var(--bs-secondary-color);
+    }
+    
+    .pagination-controls {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--bs-secondary-color);
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    .empty-state h5 {
+        color: var(--bs-body-color);
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-state p {
+        color: var(--bs-secondary-color);
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Summary Stats */
+    .transaction-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-box {
+        padding: 1.25rem;
+        border-radius: 12px;
+        border: 1px solid var(--bs-border-color);
+        background: var(--bs-body-bg);
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--bs-secondary-color);
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--bs-body-color);
+    }
+    
+    .stat-value.income {
+        color: var(--bs-success);
+    }
+    
+    .stat-value.expense {
+        color: var(--bs-danger);
+    }
+    
+    /* Loading State */
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(var(--bs-body-bg-rgb), 0.8);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+    }
+    
+    .loading-overlay.active {
+        display: flex;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .filter-section {
+            padding: 1rem;
+        }
+        
+        .filter-row {
+            flex-direction: column;
+        }
+        
+        .filter-group {
+            width: 100%;
+            min-width: 100%;
+        }
+        
+        .sort-controls {
+            width: 100%;
+            flex-wrap: wrap;
+        }
+        
+        .sort-btn {
+            flex: 1;
+            min-width: calc(50% - 0.25rem);
+            justify-content: center;
+        }
+        
+        .transactions-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+        }
+        
+        .transaction-item {
+            padding: 0.875rem 1rem;
+        }
+        
+        .transaction-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 0.75rem;
+        }
+        
+        .transaction-icon i {
+            font-size: 18px;
+        }
+        
+        .transaction-category {
+            font-size: 0.9375rem;
+        }
+        
+        .transaction-date {
+            font-size: 0.8125rem;
+        }
+        
+        .transaction-amount {
+            font-size: 1rem;
+        }
+        
+        .pagination-wrapper {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .pagination-controls {
+            width: 100%;
+        }
+        
+        .pagination-controls .btn {
+            flex: 1;
+        }
+        
+        .transaction-stats {
+            grid-template-columns: 1fr;
+        }
+        
+        .transaction-list-wrapper {
+            max-height: 500px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    <div>
+        <h1 class="h3 mb-1">Transactions</h1>
+        <p class="text-muted mb-0">View and manage all your financial transactions</p>
+    </div>
+    <div class="d-flex gap-2 d-none d-md-flex">
+        <a href="{% url 'income' %}" class="btn btn-success">
+            <i class="bi bi-plus-lg me-2"></i>
+            Add Income
+        </a>
+        <a href="{% url 'expenses' %}" class="btn btn-danger">
+            <i class="bi bi-plus-lg me-2"></i>
+            Add Expense
+        </a>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="transaction-stats" id="summaryStats">
+    <div class="stat-box">
+        <div class="stat-label">Total Income</div>
+        <div class="stat-value income" id="statIncome">₱{{ total_income|default:"0.00" }}</div>
+    </div>
+    <div class="stat-box">
+        <div class="stat-label">Total Expenses</div>
+        <div class="stat-value expense" id="statExpenses">₱{{ total_expenses|default:"0.00" }}</div>
+    </div>
+    <div class="stat-box">
+        <div class="stat-label">Net Balance</div>
+        <div class="stat-value" id="statBalance">₱{{ net_balance|default:"0.00" }}</div>
+    </div>
+    <div class="stat-box">
+        <div class="stat-label">Total Transactions</div>
+        <div class="stat-value" id="statCount">{{ total_count|default:"0" }}</div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <div class="filter-row">
+        <!-- Search -->
+        <div class="filter-group">
+            <label for="search">Search</label>
+            <div class="search-wrapper">
+                <input type="text" 
+                       class="form-control" 
+                       id="searchInput" 
+                       placeholder="Search transactions..."
+                       value="{{ request.GET.search }}">
+                <i class="bi bi-search search-icon" onclick="applyFilters()"></i>
+            </div>
+        </div>
+        
+        <!-- Type Filter -->
+        <div class="filter-group">
+            <label for="typeFilter">Type</label>
+            <select class="form-select" id="typeFilter">
+                <option value="">All Types</option>
+                <option value="income" {% if request.GET.type == 'income' %}selected{% endif %}>Income</option>
+                <option value="expense" {% if request.GET.type == 'expense' %}selected{% endif %}>Expense</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Transactions Container -->
+<div class="transactions-container" style="position: relative;">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+    
+    <!-- Header with Sort Options -->
+    <div class="transactions-header">
+        <h5 class="mb-0">
+            All Transactions 
+            <span class="badge bg-secondary" id="transactionCount">{{ transactions.count }}</span>
+        </h5>
+        
+        <div class="sort-controls">
+            <button class="sort-btn {% if request.GET.sort == 'date_desc' or not request.GET.sort %}active{% endif %}" 
+                    id="sortDate"
+                    onclick="toggleSort('date')">
+                <i class="bi bi-calendar-check"></i>
+                Date
+                <i class="bi bi-arrow-{% if request.GET.sort == 'date_asc' %}up{% else %}down{% endif %}" id="sortDateIcon"></i>
+            </button>
+            <button class="sort-btn {% if request.GET.sort == 'amount_desc' or request.GET.sort == 'amount_asc' %}active{% endif %}" 
+                    id="sortAmount"
+                    onclick="toggleSort('amount')">
+                <i class="bi bi-currency-dollar"></i>
+                Amount
+                <i class="bi bi-arrow-{% if request.GET.sort == 'amount_asc' %}up{% else %}down{% endif %}" id="sortAmountIcon"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Transaction List -->
+    <div class="transaction-list-wrapper" id="transactionList">
+        {% include 'partials/transaction_list.html' %}
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination-wrapper" id="paginationWrapper">
+        {% include 'partials/pagination.html' %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentSort = '{{ request.GET.sort|default:"date_desc" }}';
+    let currentPage = 1;
+    
+    // Apply filters with AJAX
+    function applyFilters(page = 1) {
+        const search = document.getElementById('searchInput').value;
+        const type = document.getElementById('typeFilter').value;
+        
+        currentPage = page;
+        
+        // Show loading
+        document.getElementById('loadingOverlay').classList.add('active');
+        
+        // Build URL parameters
+        const params = new URLSearchParams();
+        if (search) params.append('search', search);
+        if (type) params.append('type', type);
+        if (currentSort) params.append('sort', currentSort);
+        params.append('page', page);
+        params.append('ajax', '1');
+        
+        // Fetch data
+        fetch(`{% url 'transactions' %}?${params.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                // Update transaction list
+                document.getElementById('transactionList').innerHTML = data.html;
+                
+                // Update pagination
+                document.getElementById('paginationWrapper').innerHTML = data.pagination_html;
+                
+                // Update stats
+                document.getElementById('statIncome').textContent = '₱' + data.total_income;
+                document.getElementById('statExpenses').textContent = '₱' + data.total_expenses;
+                document.getElementById('statBalance').textContent = '₱' + data.net_balance;
+                document.getElementById('statCount').textContent = data.total_count;
+                document.getElementById('transactionCount').textContent = data.total_count;
+                
+                // Hide loading
+                document.getElementById('loadingOverlay').classList.remove('active');
+                
+                // Update URL without reload
+                const newUrl = `{% url 'transactions' %}?${params.toString().replace('&ajax=1', '')}`;
+                window.history.pushState({}, '', newUrl);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loadingOverlay').classList.remove('active');
+            });
+    }
+    
+    // Toggle sort
+    function toggleSort(type) {
+        let newSort;
+        
+        if (type === 'date') {
+            newSort = currentSort === 'date_desc' ? 'date_asc' : 'date_desc';
+            
+            // Update button states
+            document.getElementById('sortDate').classList.add('active');
+            document.getElementById('sortAmount').classList.remove('active');
+            
+            // Update icon
+            document.getElementById('sortDateIcon').className = 
+                newSort === 'date_asc' ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+        } else {
+            newSort = currentSort === 'amount_desc' ? 'amount_asc' : 'amount_desc';
+            
+            // Update button states
+            document.getElementById('sortAmount').classList.add('active');
+            document.getElementById('sortDate').classList.remove('active');
+            
+            // Update icon
+            document.getElementById('sortAmountIcon').className = 
+                newSort === 'amount_asc' ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+        }
+        
+        currentSort = newSort;
+        applyFilters(1);
+    }
+    
+    // Auto-apply filters on change
+    document.getElementById('typeFilter').addEventListener('change', function() {
+        applyFilters(1);
+    });
+    
+    // Search on Enter key
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            applyFilters(1);
+        }
+    });
+    
+    // Pagination click handler
+    function goToPage(page) {
+        applyFilters(page);
+    }
+</script>
+{% endblock %}
