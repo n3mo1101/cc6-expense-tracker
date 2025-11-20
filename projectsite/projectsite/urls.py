@@ -1,14 +1,12 @@
 from django.contrib import admin
-from django.urls import path
-from expense_tracker import views
-from expense_tracker.views import HomePageView
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.HomePageView.as_view(), name='home'),
-
-    path('accounts/login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
-
-    path('test-template/', views.TemplateView.as_view(), name='test_template'),
+    path('', include('expense_tracker.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

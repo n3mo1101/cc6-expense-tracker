@@ -1,0 +1,54 @@
+{% if transactions %}
+<ul class="transaction-list">
+    {% for transaction in transactions %}
+    <li class="transaction-item">
+        <div class="transaction-icon {{ transaction.type }}">
+            {% if transaction.type == 'income' %}
+                <i class="bi bi-arrow-up"></i>
+            {% else %}
+                <i class="bi bi-arrow-down"></i>
+            {% endif %}
+        </div>
+        <div class="transaction-details">
+            <div class="transaction-category">
+                {% if transaction.type == 'expense' %}
+                    {{ transaction.category }}
+                {% else %}
+                    {{ transaction.source }}
+                {% endif %}
+            </div>
+            <div class="transaction-date">{{ transaction.date|date:"M d, Y" }}</div>
+        </div>
+        <div class="transaction-amount {{ transaction.type }}">
+            {% if transaction.type == 'income' %}+{% else %}-{% endif %}₱{{ transaction.amount }}
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<div class="empty-state">
+    <i class="bi bi-inbox"></i>
+    <h5>No transactions found</h5>
+    <p class="text-muted">
+        {% if request.GET.search or request.GET.type %}
+            Try adjusting your filters to find what you're looking for.
+        {% else %}
+            Start tracking your finances by adding your first transaction.
+        {% endif %}
+    </p>
+    <div class="d-flex gap-2 justify-content-center">
+        {% if request.GET.search or request.GET.type %}
+        <button onclick="clearFilters()" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle"></i> Clear Filters
+        </button>
+        {% else %}
+        <a href="{% url 'income' %}" class="btn btn-success">
+            <i class="bi bi-plus-lg"></i> Add Income
+        </a>
+        <a href="{% url 'expenses' %}" class="btn btn-danger">
+            <i class="bi bi-plus-lg"></i> Add Expense
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
