@@ -34,3 +34,9 @@ def logout_view(request):
     """Simple logout view"""
     logout(request)
     return redirect('login')
+
+
+class TemplateView(ListView):
+    model = Expense
+    context_object_name = 'test_template'
+    template_name = 'test_template.html'
