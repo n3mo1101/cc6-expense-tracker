@@ -265,11 +265,19 @@
                                     type="button" 
                                     data-bs-toggle="dropdown" 
                                     aria-expanded="false">
-                                <img src="{% if user.profile.profile_picture %}{{ user.profile.avatar_url }}{% else %}https://via.placeholder.com/32{% endif %}" 
-                                     alt="User Avatar" 
-                                     width="24" 
-                                     height="24" 
-                                     class="rounded-circle me-2">
+                                {% if user.profile.avatar %}
+                                    <img src="{{ user.profile.avatar.url }}" 
+                                        alt="User Avatar" 
+                                        width="24" 
+                                        height="24" 
+                                        class="rounded-circle me-2"
+                                        style="object-fit: cover;">
+                                {% else %}
+                                    <div class="rounded-circle me-2 d-flex align-items-center justify-content-center bg-primary text-white" 
+                                        style="width: 24px; height: 24px; font-size: 12px; font-weight: 600;">
+                                        {{ user.username|make_list|first|upper }}
+                                    </div>
+                                {% endif %}
                                 <span class="d-none d-md-inline">{{ user.username }}</span>
                                 <i class="bi bi-chevron-down ms-1 d-none d-md-inline"></i>
                             </button>
@@ -314,6 +322,12 @@
                         </li>
                         
                         <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'budgets' %}active{% endif %}" href="{% url 'budgets' %}">
+                                <i class="bi bi-wallet2"></i>
+                                <span>Budgets</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'income' %}active{% endif %}" href="{% url 'income' %}">
                                 <i class="bi bi-arrow-up-circle"></i>
                                 <span>Income</span>
@@ -323,12 +337,6 @@
                             <a class="nav-link {% if request.resolver_match.url_name == 'expenses' %}active{% endif %}" href="{% url 'expenses' %}">
                                 <i class="bi bi-arrow-down-circle"></i>
                                 <span>Expenses</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'budgets' %}active{% endif %}" href="{% url 'budgets' %}">
-                                <i class="bi bi-wallet2"></i>
-                                <span>Budgets</span>
                             </a>
                         </li>
                         <li class="nav-item">

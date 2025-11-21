@@ -1,15 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
-from django.db.models import Sum, Count, Q, F, Value, CharField
-from django.utils import timezone
-from datetime import timedelta, datetime
-from django.db import models
 import json
+
+from expense_tracker.services.dashboard_service import DashboardService
 
 
 # ===== AUTHENTICATION VIEWS =====
@@ -40,7 +35,28 @@ def logout_view(request):
 @login_required
 def dashboard_view(request):
     """User dashboard displaying summary and key metrics"""
-    return render(request, 'dashboard.html')
+    user = request.user
+    
+    # Get all dashboard data from service
+    dashboard_data = DashboardService.get_dashboard_data(user)
+    
+    context = {
+        # Wallet & Progress Bar
+        'wallet': dashboard_data['wallet'],
+        
+        # 4 Summary Cards
+        'summary': dashboard_data['monthly_summary'],
+        
+        # Charts (JSON for JavaScript)
+        'spending_trends': json.dumps(dashboard_data['spending_trends']),
+        'current_month_trends': json.dumps(dashboard_data['current_month_trends']),
+        'category_breakdown': json.dumps(dashboard_data['category_breakdown']),
+        
+        # Recent Transactions
+        'recent_transactions': dashboard_data['recent_transactions'],
+    }
+    
+    return render(request, 'dashboard.html', context)
 
 
 @login_required
@@ -52,7 +68,22 @@ def transactions_view(request):
 @login_required
 def analytics_view(request):
     """Analytics and data visualization"""
-    return render(request, 'analytics.html')
+    user = request.user
+    
+    # Reuse the same chart functions for analytics page
+    context = {
+        'spending_trends': json.dumps(
+            DashboardService.get_spending_trends(user, months=12)
+        ),
+        'current_month_trends': json.dumps(
+            DashboardService.get_current_month_trends(user)
+        ),
+        'category_breakdown': json.dumps(
+            DashboardService.get_category_breakdown(user)
+        ),
+    }
+    
+    return render(request, 'analytics.html', context)
 
 
 @login_required
