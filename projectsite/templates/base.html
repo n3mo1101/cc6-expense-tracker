@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="BudgetPro - Smart Budget Tracking Application">
+    <meta name="description" content="MoneyLens - Smart Budget Tracking Application">
     <title>{% block title %}MoneyLens{% endblock %}</title>
     
     <!-- Fonts -->
@@ -18,180 +18,8 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
     
-    <style>
-        /* Transaction List Styles */
-        .transaction-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .transaction-item {
-            display: flex;
-            align-items: center;
-            padding: 1rem;
-            border-bottom: 1px solid var(--bs-border-color);
-            transition: background-color 0.2s ease;
-        }
-        
-        .transaction-item:hover {
-            background-color: var(--bs-secondary-bg);
-        }
-        
-        .transaction-item:last-child {
-            border-bottom: none;
-        }
-        
-        .transaction-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1rem;
-            flex-shrink: 0;
-        }
-        
-        .transaction-icon.income {
-            background-color: rgba(25, 135, 84, 0.1);
-            color: var(--bs-success);
-        }
-        
-        .transaction-icon.expense {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: var(--bs-danger);
-        }
-        
-        .transaction-icon i {
-            font-size: 20px;
-        }
-        
-        .transaction-details {
-            flex: 1;
-            min-width: 0;
-        }
-        
-        .transaction-category {
-            font-weight: 600;
-            color: var(--bs-body-color);
-            margin-bottom: 2px;
-        }
-        
-        .transaction-date {
-            font-size: 0.875rem;
-            color: var(--bs-secondary-color);
-        }
-        
-        .transaction-amount {
-            font-weight: 700;
-            font-size: 1.125rem;
-            text-align: right;
-            margin-left: 1rem;
-        }
-        
-        .transaction-amount.income {
-            color: var(--bs-success);
-        }
-        
-        .transaction-amount.expense {
-            color: var(--bs-danger);
-        }
-        
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 3rem 1.5rem;
-        }
-        
-        .empty-state i {
-            font-size: 4rem;
-            color: var(--bs-secondary-color);
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-        
-        .empty-state p {
-            color: var(--bs-secondary-color);
-            margin-bottom: 1.5rem;
-        }
-        
-        /* Mobile Sidebar Overlay */
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1039;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .sidebar-overlay.show {
-            display: block;
-            opacity: 1;
-        }
-        
-        /* Mobile Sidebar Adjustments */
-        @media (max-width: 991.98px) {
-            .admin-sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                z-index: 1040;
-            }
-            
-            .admin-sidebar.show {
-                transform: translateX(0);
-            }
-            
-            /* Fix dropdown positioning on mobile */
-            .navbar-nav .dropdown-menu {
-                position: absolute !important;
-                right: 0 !important;
-                left: auto !important;
-                transform: none !important;
-            }
-        }
-        
-        /* Desktop responsiveness */
-        @media (min-width: 992px) {
-            .sidebar-overlay {
-                display: none !important;
-            }
-        }
-        
-        /* Mobile transaction list */
-        @media (max-width: 576px) {
-            .transaction-item {
-                padding: 0.75rem;
-            }
-            
-            .transaction-icon {
-                width: 40px;
-                height: 40px;
-                margin-right: 0.75rem;
-            }
-            
-            .transaction-icon i {
-                font-size: 18px;
-            }
-            
-            .transaction-category {
-                font-size: 0.9375rem;
-            }
-            
-            .transaction-date {
-                font-size: 0.8125rem;
-            }
-            
-            .transaction-amount {
-                font-size: 1rem;
-            }
-        }
-    </style>
+    <!-- Base CSS -->
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
     
     {% block extra_css %}{% endblock %}
 </head>
@@ -267,14 +95,14 @@
                                     aria-expanded="false">
                                 {% if user.profile.avatar %}
                                     <img src="{{ user.profile.avatar.url }}" 
-                                        alt="User Avatar" 
-                                        width="24" 
-                                        height="24" 
-                                        class="rounded-circle me-2"
-                                        style="object-fit: cover;">
+                                         alt="User Avatar" 
+                                         width="24" 
+                                         height="24" 
+                                         class="rounded-circle me-2"
+                                         style="object-fit: cover;">
                                 {% else %}
                                     <div class="rounded-circle me-2 d-flex align-items-center justify-content-center bg-primary text-white" 
-                                        style="width: 24px; height: 24px; font-size: 12px; font-weight: 600;">
+                                         style="width: 24px; height: 24px; font-size: 12px; font-weight: 600;">
                                         {{ user.username|make_list|first|upper }}
                                     </div>
                                 {% endif %}
@@ -395,139 +223,8 @@
     <!-- Bootstrap Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Custom Scripts -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const toggleButton = document.querySelector('[data-sidebar-toggle]');
-            const sidebar = document.getElementById('admin-sidebar');
-            const wrapper = document.getElementById('admin-wrapper');
-            const overlay = document.getElementById('sidebarOverlay');
-
-            // Mobile vs Desktop sidebar behavior
-            function isMobile() {
-                return window.innerWidth < 992;
-            }
-
-            if (toggleButton && sidebar && wrapper) {
-                // Set initial state
-                if (!isMobile()) {
-                    const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
-                    if (isCollapsed) {
-                        wrapper.classList.add('sidebar-collapsed');
-                        toggleButton.classList.add('is-active');
-                    }
-                }
-
-                // Toggle click handler
-                toggleButton.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    
-                    if (isMobile()) {
-                        // Mobile: slide sidebar and show overlay
-                        sidebar.classList.toggle('show');
-                        overlay.classList.toggle('show');
-                    } else {
-                        // Desktop: collapse sidebar
-                        const isCurrentlyCollapsed = wrapper.classList.contains('sidebar-collapsed');
-                        
-                        if (isCurrentlyCollapsed) {
-                            wrapper.classList.remove('sidebar-collapsed');
-                            toggleButton.classList.remove('is-active');
-                            localStorage.setItem('sidebar-collapsed', 'false');
-                        } else {
-                            wrapper.classList.add('sidebar-collapsed');
-                            toggleButton.classList.add('is-active');
-                            localStorage.setItem('sidebar-collapsed', 'true');
-                        }
-                    }
-                });
-
-                // Close sidebar when clicking overlay (mobile only)
-                if (overlay) {
-                    overlay.addEventListener('click', () => {
-                        sidebar.classList.remove('show');
-                        overlay.classList.remove('show');
-                    });
-                }
-
-                // Close sidebar when clicking a link (mobile only)
-                const sidebarLinks = sidebar.querySelectorAll('.nav-link');
-                sidebarLinks.forEach(link => {
-                    link.addEventListener('click', () => {
-                        if (isMobile()) {
-                            sidebar.classList.remove('show');
-                            overlay.classList.remove('show');
-                        }
-                    });
-                });
-
-                // Handle window resize
-                window.addEventListener('resize', () => {
-                    if (!isMobile()) {
-                        // Remove mobile classes on desktop
-                        sidebar.classList.remove('show');
-                        overlay.classList.remove('show');
-                    } else {
-                        // Remove desktop classes on mobile
-                        wrapper.classList.remove('sidebar-collapsed');
-                        toggleButton.classList.remove('is-active');
-                    }
-                });
-            }
-
-            // Theme Toggle
-            const themeToggle = document.getElementById('themeToggle');
-            const themeIconLight = document.getElementById('themeIconLight');
-            const themeIconDark = document.getElementById('themeIconDark');
-            const html = document.documentElement;
-
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            html.setAttribute('data-bs-theme', savedTheme);
-            
-            if (savedTheme === 'dark') {
-                themeIconLight.classList.add('d-none');
-                themeIconDark.classList.remove('d-none');
-            }
-
-            if (themeToggle) {
-                themeToggle.addEventListener('click', () => {
-                    const currentTheme = html.getAttribute('data-bs-theme');
-                    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-                    
-                    html.setAttribute('data-bs-theme', newTheme);
-                    localStorage.setItem('theme', newTheme);
-                    
-                    if (newTheme === 'dark') {
-                        themeIconLight.classList.add('d-none');
-                        themeIconDark.classList.remove('d-none');
-                    } else {
-                        themeIconLight.classList.remove('d-none');
-                        themeIconDark.classList.add('d-none');
-                    }
-                });
-            }
-
-            // Fullscreen Toggle
-            const fullscreenToggle = document.getElementById('fullscreenToggle');
-            if (fullscreenToggle) {
-                fullscreenToggle.addEventListener('click', () => {
-                    if (!document.fullscreenElement) {
-                        document.documentElement.requestFullscreen();
-                    } else {
-                        if (document.exitFullscreen) {
-                            document.exitFullscreen();
-                        }
-                    }
-                });
-            }
-
-            // Initialize Bootstrap tooltips
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
-        });
-    </script>
+    <!-- Base JS -->
+    <script src="{% static 'js/base.js' %}"></script>
 
     {% block extra_js %}{% endblock %}
 </body>
