@@ -1,112 +1,242 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from .models import UserProfile, ExpenseCategory, Budget, Expense, Income, BudgetCategory
-from django.utils.html import mark_safe
+from .models import UserProfile, Wallet, Category, IncomeSource, Budget, RecurringTransaction, Income, Expense
+
+
+# ============================================================================
+# INLINE MODELS
+# ============================================================================
+
+class UserProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    verbose_name_plural = 'Profile'
+
+
+class WalletInline(admin.TabularInline):
+    model = Wallet
+    extra = 0
+    readonly_fields = ['id', 'created_at', 'updated_at']
+
+
+# ============================================================================
+# CUSTOM USER ADMIN: Extended User admin with profile and wallets.
+# ============================================================================
+
+class UserAdmin(BaseUserAdmin):
+    inlines = [UserProfileInline, WalletInline]
+    list_display = ['username', 'email', 'get_primary_currency', 'is_active', 'date_joined']
+    
+    def get_primary_currency(self, obj):
+        return obj.profile.primary_currency if hasattr(obj, 'profile') else '-'
+    get_primary_currency.short_description = 'Currency'
+
+
+# Re-register User with custom admin
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
+
+
+# ============================================================================
+# USER PROFILE ADMIN
+# ============================================================================
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'avatar_display', 'default_currency', 'timezone', 'avatar_preview')
-    list_filter = ('default_currency', 'timezone')
-    readonly_fields = ('avatar_preview',)
-    
-    def avatar_display(self, obj):
-        # Display friendly avatar name instead of file path
-        return dict(obj.AVATAR_CHOICES).get(obj.profile_picture, 'Default Avatar')
-    avatar_display.short_description = 'Avatar'
-    
-    def avatar_preview(self, obj):
-        # Show avatar preview in admin
-        if obj.profile_picture:
-            return mark_safe(f'<img src="{obj.avatar_url}" width="80" height="80" style="border-radius: 8px; border: 2px solid #ddd;" />')
-        return "No avatar selected"
-    avatar_preview.short_description = 'Avatar Preview'
+    list_display = ['user', 'primary_currency', 'created_at']
+    list_filter = ['primary_currency']
+    search_fields = ['user__username', 'user__email']
+    readonly_fields = ['id', 'created_at', 'updated_at']
 
 
-@admin.register(ExpenseCategory)
-class ExpenseCategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'is_predefined', 'user', 'public_id', 'created_at')
-    list_filter = ('is_predefined', 'created_at')
-    search_fields = ('name', 'description', 'user__username', 'public_id')
-    readonly_fields = ('public_id', 'created_at', 'updated_at')
-    
-    fieldsets = (
-        (None, {'fields': ('name', 'public_id')}),
-        ('Category Details', {'fields': ('description', 'is_predefined', 'user')}),
-        ('Timestamps', {'fields': ('created_at', 'updated_at')}),
-    )
+# ============================================================================
+# WALLET ADMIN
+# ============================================================================
 
+@admin.register(Wallet)
+class WalletAdmin(admin.ModelAdmin):
+    list_display = ['user', 'currency', 'balance', 'is_primary', 'updated_at']
+    list_filter = ['currency', 'is_primary']
+    search_fields = ['user__username']
+    readonly_fields = ['id', 'created_at', 'updated_at']
+
+
+# ============================================================================
+# CATEGORY ADMIN
+# ============================================================================
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ['name', 'user', 'icon', 'created_at']
+    list_filter = ['user']
+    search_fields = ['name', 'user__username']
+    readonly_fields = ['id', 'created_at', 'updated_at']
+
+
+# ============================================================================
+# INCOME SOURCE ADMIN
+# ============================================================================
+
+@admin.register(IncomeSource)
+class IncomeSourceAdmin(admin.ModelAdmin):
+    list_display = ['name', 'user', 'icon', 'created_at']
+    list_filter = ['user']
+    search_fields = ['name', 'user__username']
+    readonly_fields = ['id', 'created_at', 'updated_at']
+
+
+# ============================================================================
+# BUDGET ADMIN
+# ============================================================================
 
 @admin.register(Budget)
 class BudgetAdmin(admin.ModelAdmin):
-    list_display = ('name', 'user', 'total_amount', 'currency_code', 'start_date', 'end_date', 'is_active', 'public_id')
-    list_filter = ('currency_code', 'start_date', 'end_date', 'created_at')
-    search_fields = ('name', 'user__username', 'description', 'public_id')
-    readonly_fields = ('public_id', 'created_at', 'updated_at')
-    date_hierarchy = 'start_date'
+    list_display = ['name', 'user', 'budget_type', 'amount', 'spent_amount', 'remaining', 'status']
+    list_filter = ['budget_type', 'recurrence_pattern', 'status', 'currency']
+    search_fields = ['name', 'user__username']
+    readonly_fields = ['id', 'created_at', 'updated_at']
+    filter_horizontal = ['category_filters']
+    fieldsets = [
+        (None, {
+            'fields': ['id', 'user', 'name', 'budget_type']
+        }),
+        ('Amount', {
+            'fields': ['amount', 'currency', 'spent_amount']
+        }),
+        ('Schedule', {
+            'fields': ['recurrence_pattern', 'start_date', 'end_date', 'last_reset_date', 'status']
+        }),
+        ('Category Filter', {
+            'fields': ['category_filters'],
+            'classes': ['collapse']
+        }),
+        ('Timestamps', {
+            'fields': ['created_at', 'updated_at'],
+            'classes': ['collapse']
+        }),
+    ]
     
-    fieldsets = (
-        (None, {'fields': ('name', 'user', 'public_id')}),
-        ('Budget Details', {'fields': ('total_amount', 'currency_code', 'start_date', 'end_date', 'description')}),
-        ('Timestamps', {'fields': ('created_at', 'updated_at')}),
-    )
+    def remaining(self, obj):
+        return obj.remaining_amount
+    remaining.short_description = 'Remaining'
 
 
-@admin.register(Expense)
-class ExpenseAdmin(admin.ModelAdmin):
-    list_display = ('amount', 'currency_code', 'category', 'user', 'expense_date', 'is_recurring', 'public_id')
-    list_filter = ('currency_code', 'category', 'expense_date', 'is_recurring', 'created_at')
-    search_fields = ('description', 'user__username', 'category__name', 'public_id')
-    readonly_fields = ('public_id', 'created_at', 'updated_at')
-    date_hierarchy = 'expense_date'
-    
-    fieldsets = (
-        (None, {'fields': ('user', 'category', 'public_id')}),
-        ('Expense Details', {'fields': ('amount', 'currency_code', 'description', 'expense_date')}),
-        ('Recurring Settings', {'fields': ('is_recurring', 'recurrence_rule', 'parent_expense')}),
-        ('Timestamps', {'fields': ('created_at', 'updated_at')}),
-    )
+# ============================================================================
+# RECURRING TRANSACTION ADMIN
+# ============================================================================
 
+@admin.register(RecurringTransaction)
+class RecurringTransactionAdmin(admin.ModelAdmin):
+    list_display = ['get_name', 'user', 'type', 'amount', 'currency', 'recurrence_pattern', 'is_active']
+    list_filter = ['type', 'recurrence_pattern', 'is_active', 'currency']
+    search_fields = ['category__name', 'income_source__name', 'user__username', 'description']
+    readonly_fields = ['id', 'created_at', 'updated_at']
+    fieldsets = [
+        (None, {
+            'fields': ['id', 'user', 'type', 'category', 'income_source', 'description']
+        }),
+        ('Amount', {
+            'fields': ['amount', 'currency']
+        }),
+        ('Schedule', {
+            'fields': ['recurrence_pattern', 'custom_interval_days', 'start_date', 'end_date', 'last_generated_date', 'is_active']
+        }),
+        ('Linked Budget', {
+            'fields': ['budget'],
+            'classes': ['collapse']
+        }),
+        ('Timestamps', {
+            'fields': ['created_at', 'updated_at'],
+            'classes': ['collapse']
+        }),
+    ]
+
+    def get_name(self, obj):
+        if obj.category:
+            return obj.category.name
+        elif obj.income_source:
+            return obj.income_source.name
+        return '-'
+    get_name.short_description = 'Category/Source'
+
+
+# ============================================================================
+# INCOME ADMIN
+# ============================================================================
 
 @admin.register(Income)
 class IncomeAdmin(admin.ModelAdmin):
-    list_display = ('amount', 'currency_code', 'source', 'user', 'income_date', 'is_recurring', 'public_id')
-    list_filter = ('currency_code', 'source', 'income_date', 'is_recurring', 'created_at')
-    search_fields = ('source', 'description', 'user__username', 'public_id')
-    readonly_fields = ('public_id', 'created_at', 'updated_at')
-    date_hierarchy = 'income_date'
-    
-    fieldsets = (
-        (None, {'fields': ('user', 'source', 'public_id')}),
-        ('Income Details', {'fields': ('amount', 'currency_code', 'description', 'income_date')}),
-        ('Recurring Settings', {'fields': ('is_recurring', 'recurrence_rule')}),
-        ('Timestamps', {'fields': ('created_at', 'updated_at')}),
-    )
+    list_display = ['get_source_name', 'user', 'amount', 'currency', 'transaction_date', 'status']
+    list_filter = ['status', 'currency', 'source', 'transaction_date']
+    search_fields = ['source__name', 'user__username', 'description']
+    readonly_fields = ['id', 'converted_amount', 'created_at', 'updated_at']
+    date_hierarchy = 'transaction_date'
+    fieldsets = [
+        (None, {
+            'fields': ['id', 'user', 'source', 'description']
+        }),
+        ('Amount', {
+            'fields': ['amount', 'currency', 'exchange_rate', 'converted_amount']
+        }),
+        ('Status', {
+            'fields': ['transaction_date', 'status']
+        }),
+        ('Recurring', {
+            'fields': ['recurring_transaction'],
+            'classes': ['collapse']
+        }),
+        ('Timestamps', {
+            'fields': ['created_at', 'updated_at'],
+            'classes': ['collapse']
+        }),
+    ]
+
+    def get_source_name(self, obj):
+        return obj.source.name
+    get_source_name.short_description = 'Source'
 
 
-@admin.register(BudgetCategory)
-class BudgetCategoryAdmin(admin.ModelAdmin):
-    list_display = ('budget', 'category', 'allocated_amount', 'public_id', 'created_at')
-    list_filter = ('budget', 'category', 'created_at')
-    search_fields = ('budget__name', 'category__name', 'public_id')
-    readonly_fields = ('public_id', 'created_at', 'updated_at')
-    
-    fieldsets = (
-        (None, {'fields': ('budget', 'category', 'public_id')}),
-        ('Allocation', {'fields': ('allocated_amount',)}),
-        ('Timestamps', {'fields': ('created_at', 'updated_at')}),
-    )
+# ============================================================================
+# EXPENSE ADMIN
+# ============================================================================
+
+@admin.register(Expense)
+class ExpenseAdmin(admin.ModelAdmin):
+    list_display = ['get_category_name', 'user', 'amount', 'currency', 'transaction_date', 'status', 'budget']
+    list_filter = ['status', 'currency', 'category', 'transaction_date']
+    search_fields = ['category__name', 'user__username', 'description']
+    readonly_fields = ['id', 'converted_amount', 'created_at', 'updated_at']
+    date_hierarchy = 'transaction_date'
+    fieldsets = [
+        (None, {
+            'fields': ['id', 'user', 'category', 'description']
+        }),
+        ('Amount', {
+            'fields': ['amount', 'currency', 'exchange_rate', 'converted_amount']
+        }),
+        ('Status', {
+            'fields': ['transaction_date', 'status']
+        }),
+        ('Links', {
+            'fields': ['budget', 'recurring_transaction'],
+            'classes': ['collapse']
+        }),
+        ('Timestamps', {
+            'fields': ['created_at', 'updated_at'],
+            'classes': ['collapse']
+        }),
+    ]
+
+    def get_category_name(self, obj):
+        return obj.category.name
+    get_category_name.short_description = 'Category'
 
 
-# Customize the default User admin if desired
-class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active', 'date_joined')
-    list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups')
-    search_fields = ('username', 'email', 'first_name', 'last_name')
-    ordering = ('username',)
-    
-    fieldsets = (
-        (None, {'fields': ('username', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email')}),
-        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-        ('Important dates', {'fields': ('last_login', 'date_joined')}),
-    )
+# ============================================================================
+# ADMIN SITE CUSTOMIZATION
+# ============================================================================
+
+admin.site.site_header = 'MoneyLens Admin'
+admin.site.site_title = 'MoneyLens'
+admin.site.index_title = 'Dashboard'
