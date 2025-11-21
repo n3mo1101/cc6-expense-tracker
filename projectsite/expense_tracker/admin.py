@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from .models import UserProfile, Wallet, Category, IncomeSource, Budget, RecurringTransaction, Income, Expense
+from .models import UserProfile, Wallet, Category, IncomeSource, Budget, RecurringTransaction, Income, Expense, CurrencyCache
 
 
 # ============================================================================
@@ -231,6 +231,18 @@ class ExpenseAdmin(admin.ModelAdmin):
     def get_category_name(self, obj):
         return obj.category.name
     get_category_name.short_description = 'Category'
+
+
+# ============================================================================
+# CURRENCY CACHE ADMIN
+# ============================================================================
+
+@admin.register(CurrencyCache)
+class CurrencyCacheAdmin(admin.ModelAdmin):
+    list_display = ['code', 'name', 'exchange_rate', 'last_updated']
+    search_fields = ['code', 'name']
+    readonly_fields = ['last_updated']
+    ordering = ['code']
 
 
 # ============================================================================

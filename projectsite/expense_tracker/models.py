@@ -324,6 +324,26 @@ class Expense(BaseModel):
 
 
 # ============================================================================
+# CURRENCY CACHE: Cached currency codes and exchange rates.
+# ============================================================================
+
+# Rates are stored relative to USD as base currency.
+class CurrencyCache(models.Model):
+    code = models.CharField(max_length=3, primary_key=True)
+    name = models.CharField(max_length=100)
+    exchange_rate = models.DecimalField(max_digits=15, decimal_places=6)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'currency_cache'
+        verbose_name = 'Currency'
+        verbose_name_plural = 'Currencies'
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+
+# ============================================================================
 # SIGNALS
 # ============================================================================
 
