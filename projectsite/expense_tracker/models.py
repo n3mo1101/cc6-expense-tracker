@@ -260,12 +260,17 @@ class Income(BaseModel):
         return f"{self.source.name} - {self.currency} {self.amount}"
 
     def save(self, *args, **kwargs):
-        if self.currency != self.user.profile.primary_currency and self.exchange_rate:
-            self.converted_amount = self.amount * self.exchange_rate
-        elif self.currency == self.user.profile.primary_currency:
-            self.converted_amount = self.amount
+        try:
+            primary_currency = self.user.profile.primary_currency
+            if self.currency != primary_currency and self.exchange_rate:
+                self.converted_amount = self.amount * self.exchange_rate
+            elif self.currency == primary_currency:
+                self.converted_amount = self.amount
+        except Exception:
+            # If profile doesn't exist or other error, just save amount as converted
+            if self.converted_amount is None:
+                self.converted_amount = self.amount
         super().save(*args, **kwargs)
-
 
 # ============================================================================
 # EXPENSE: Records expense transactions.

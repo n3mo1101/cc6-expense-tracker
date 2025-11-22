@@ -19,6 +19,13 @@ from expense_tracker.models import (
 )
 
 
+def safe_decimal(value):
+    """Safely convert to Decimal, return 0 if None."""
+    if value is None:
+        return Decimal('0.00')
+    return value
+
+
 class DashboardService:
     """Service for dashboard-related data and calculations."""
 
@@ -191,18 +198,20 @@ class DashboardService:
             status='complete',
             transaction_date__gte=first_of_month,
             transaction_date__lte=today
-        ).annotate(
-            day=TruncDate('transaction_date')
-        ).values('day').annotate(
+        ).values('transaction_date').annotate(
             total=Sum('converted_amount')
-        ).order_by('day')
+        ).order_by('transaction_date')
         
         # Build complete day list
         labels = []
         data = []
         tooltip_labels = []
         
-        daily_dict = {item['day']: item['total'] for item in daily_data}
+        # Build dict with date as key
+        daily_dict = {}
+        for item in daily_data:
+            day_key = item['transaction_date']
+            daily_dict[day_key] = item['total'] or Decimal('0.00')
         
         current = first_of_month
         while current <= today:
@@ -300,23 +309,23 @@ class DashboardService:
         for income in incomes:
             transactions.append({
                 'type': 'income',
-                'name': income.source.name,
-                'amount': income.converted_amount or income.amount,
-                'currency': income.currency,
+                'name': income.source.name if income.source else 'Unknown',
+                'amount': safe_decimal(income.converted_amount) or safe_decimal(income.amount),
+                'currency': income.currency or 'PHP',
                 'date': income.transaction_date,
                 'description': income.description,
-                'icon': income.source.icon,
+                'icon': income.source.icon if income.source else None,
             })
         
         for expense in expenses:
             transactions.append({
                 'type': 'expense',
-                'name': expense.category.name,
-                'amount': expense.converted_amount or expense.amount,
-                'currency': expense.currency,
+                'name': expense.category.name if expense.category else 'Unknown',
+                'amount': safe_decimal(expense.converted_amount) or safe_decimal(expense.amount),
+                'currency': expense.currency or 'PHP',
                 'date': expense.transaction_date,
                 'description': expense.description,
-                'icon': expense.category.icon,
+                'icon': expense.category.icon if expense.category else None,
             })
         
         # Sort by date descending and limit

@@ -66,7 +66,7 @@ def dashboard_view(request):
     return render(request, 'dashboard.html', context)
 
 
-# ===== TRANSACTIONS VIEW =====
+# ===== TRANSACTIONS VIEWS =====
 @login_required
 def transactions_view(request):
     """View and manage all transactions"""
@@ -174,16 +174,26 @@ def create_income(request):
         amount = Decimal(data['amount'])
         currency = data['currency']
         
+        # Get user's primary currency safely
+        try:
+            primary_currency = user.profile.primary_currency
+        except Exception:
+            primary_currency = 'PHP'
+        
         # Get conversion if different currency
         converted_amount = amount
         exchange_rate = None
         
-        if currency != user.profile.primary_currency:
-            conversion = CurrencyService.convert(
-                amount, currency, user.profile.primary_currency
-            )
-            converted_amount = conversion['converted_amount']
-            exchange_rate = conversion['rate']
+        if currency != primary_currency:
+            try:
+                conversion = CurrencyService.convert(
+                    amount, currency, primary_currency
+                )
+                converted_amount = conversion['converted_amount']
+                exchange_rate = conversion['rate']
+            except Exception:
+                # If conversion fails, use original amount
+                converted_amount = amount
         
         income = Income.objects.create(
             user=user,
