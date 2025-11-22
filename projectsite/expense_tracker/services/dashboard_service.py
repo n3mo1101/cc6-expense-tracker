@@ -45,11 +45,14 @@ class DashboardService:
     def get_wallet_summary(cls, user):
         """
         Get wallet balance and spending progress for current month.
+        Balance = current month's income - expenses
         Progress = percentage of income spent this month.
         """
-        primary_wallet = Wallet.objects.filter(user=user, is_primary=True).first()
-        balance = primary_wallet.balance if primary_wallet else Decimal('0.00')
-        currency = primary_wallet.currency if primary_wallet else 'PHP'
+        # Get user's primary currency
+        try:
+            currency = user.profile.primary_currency
+        except Exception:
+            currency = 'PHP'
         
         # Get current month's income and expenses
         today = timezone.now().date()
@@ -68,6 +71,9 @@ class DashboardService:
             transaction_date__gte=first_of_month,
             transaction_date__lte=today
         ).aggregate(total=Sum('converted_amount'))['total'] or Decimal('0.00')
+        
+        # Balance = this month's income - expenses
+        balance = monthly_income - monthly_expenses
         
         # Calculate progress (expenses as percentage of income)
         if monthly_income > 0:
@@ -89,11 +95,17 @@ class DashboardService:
         Get the 4 summary cards data:
         - Total Income (this month)
         - Total Expenses (this month)
-        - Net Savings (wallet balance)
+        - Net Savings (calculated balance)
         - Active Budgets count
         """
         today = timezone.now().date()
         first_of_month = today.replace(day=1)
+        
+        # Get user's primary currency
+        try:
+            currency = user.profile.primary_currency
+        except Exception:
+            currency = 'PHP'
         
         # Total Income this month
         total_income = Income.objects.filter(
@@ -111,15 +123,21 @@ class DashboardService:
             transaction_date__lte=today
         ).aggregate(total=Sum('converted_amount'))['total'] or Decimal('0.00')
         
-        # Net Savings (wallet balance)
-        primary_wallet = Wallet.objects.filter(user=user, is_primary=True).first()
-        net_savings = primary_wallet.balance if primary_wallet else Decimal('0.00')
+        # Net Savings (all time income - all time expenses)
+        all_income = Income.objects.filter(
+            user=user,
+            status='complete'
+        ).aggregate(total=Sum('converted_amount'))['total'] or Decimal('0.00')
+        
+        all_expenses = Expense.objects.filter(
+            user=user,
+            status='complete'
+        ).aggregate(total=Sum('converted_amount'))['total'] or Decimal('0.00')
+        
+        net_savings = all_income - all_expenses
         
         # Active Budgets count
         active_budgets = Budget.objects.filter(user=user, status='active').count()
-        
-        # Get currency
-        currency = primary_wallet.currency if primary_wallet else 'PHP'
         
         return {
             'total_income': total_income,
@@ -291,16 +309,14 @@ class DashboardService:
         Get recent transactions (both income and expenses combined).
         Returns list sorted by transaction_date descending.
         """
-        # Get recent incomes
+        # Get recent incomes (include pending too for recent list)
         incomes = Income.objects.filter(
-            user=user,
-            status='complete'
+            user=user
         ).select_related('source').order_by('-transaction_date')[:limit]
         
         # Get recent expenses
         expenses = Expense.objects.filter(
-            user=user,
-            status='complete'
+            user=user
         ).select_related('category').order_by('-transaction_date')[:limit]
         
         # Combine and format
@@ -313,7 +329,8 @@ class DashboardService:
                 'amount': safe_decimal(income.converted_amount) or safe_decimal(income.amount),
                 'currency': income.currency or 'PHP',
                 'date': income.transaction_date,
-                'description': income.description,
+                'status': income.status,
+                'description': income.description or '',
                 'icon': income.source.icon if income.source else None,
             })
         
@@ -324,7 +341,8 @@ class DashboardService:
                 'amount': safe_decimal(expense.converted_amount) or safe_decimal(expense.amount),
                 'currency': expense.currency or 'PHP',
                 'date': expense.transaction_date,
-                'description': expense.description,
+                'status': expense.status,
+                'description': expense.description or '',
                 'icon': expense.category.icon if expense.category else None,
             })
         

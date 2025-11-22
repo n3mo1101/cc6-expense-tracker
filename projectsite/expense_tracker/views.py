@@ -47,6 +47,15 @@ def dashboard_view(request):
     # Get all dashboard data from service
     dashboard_data = DashboardService.get_dashboard_data(user)
     
+    # Get data for create modals
+    from expense_tracker.models import Category, IncomeSource, Budget
+    from expense_tracker.services.currency_service import CurrencyService
+    
+    categories = Category.objects.filter(user=user)
+    income_sources = IncomeSource.objects.filter(user=user)
+    budgets = Budget.objects.filter(user=user, status='active')
+    currencies = CurrencyService.get_all_currencies()
+    
     context = {
         # Wallet & Progress Bar
         'wallet': dashboard_data['wallet'],
@@ -61,6 +70,13 @@ def dashboard_view(request):
         
         # Recent Transactions
         'recent_transactions': dashboard_data['recent_transactions'],
+        
+        # Modal data
+        'categories': categories,
+        'income_sources': income_sources,
+        'budgets': budgets,
+        'currencies': currencies,
+        'primary_currency': user.profile.primary_currency if hasattr(user, 'profile') else 'PHP',
     }
     
     return render(request, 'dashboard.html', context)

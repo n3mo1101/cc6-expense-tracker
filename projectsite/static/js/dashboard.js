@@ -1,3 +1,5 @@
+/* Dashboard Charts and Interactions */
+
 let spendingChart;
 let categoryChart;
 
@@ -9,7 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Spending Trends Chart
 function initSpendingChart(type) {
-    const ctx = document.getElementById('spendingTrendsChart').getContext('2d');
+    const ctx = document.getElementById('spendingTrendsChart');
+    if (!ctx) return;
     
     if (spendingChart) {
         spendingChart.destroy();
@@ -18,7 +21,7 @@ function initSpendingChart(type) {
     const data = type === 'yearly' ? spendingTrendsData : currentMonthData;
     const tooltipLabels = type === 'monthly' ? currentMonthData.tooltip_labels : null;
 
-    spendingChart = new Chart(ctx, {
+    spendingChart = new Chart(ctx.getContext('2d'), {
         type: 'line',
         data: {
             labels: data.labels,
@@ -62,7 +65,7 @@ function initSpendingChart(type) {
                             return context[0].label;
                         },
                         label: function(context) {
-                            return currency + ' ' + context.parsed.y.toLocaleString('en-US', {minimumFractionDigits: 2});
+                            return dashboardCurrency + ' ' + context.parsed.y.toLocaleString('en-US', {minimumFractionDigits: 2});
                         }
                     }
                 }
@@ -80,7 +83,7 @@ function initSpendingChart(type) {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return currency + ' ' + value.toLocaleString();
+                            return dashboardCurrency + ' ' + value.toLocaleString();
                         }
                     }
                 }
@@ -107,15 +110,16 @@ function toggleTrendsChart(type) {
 
 // Category Donut Chart
 function initCategoryChart() {
-    const ctx = document.getElementById('categoryChart').getContext('2d');
+    const ctx = document.getElementById('categoryChart');
+    if (!ctx) return;
     
     // Handle empty data
     if (!categoryData.data || categoryData.data.length === 0) {
-        document.getElementById('categoryChart').parentElement.innerHTML = '<div class="text-center text-muted py-5"><i class="bi bi-pie-chart fs-1 mb-2 d-block opacity-50"></i>No expenses this month</div>';
+        ctx.parentElement.innerHTML = '<div class="text-center text-muted py-5"><i class="bi bi-pie-chart fs-1 mb-2 d-block opacity-50"></i>No expenses this month</div>';
         return;
     }
     
-    categoryChart = new Chart(ctx, {
+    categoryChart = new Chart(ctx.getContext('2d'), {
         type: 'doughnut',
         data: {
             labels: categoryData.labels,
@@ -143,7 +147,7 @@ function initCategoryChart() {
                         label: function(context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percentage = ((context.parsed / total) * 100).toFixed(1);
-                            return currency + ' ' + context.parsed.toLocaleString('en-US', {minimumFractionDigits: 2}) + ' (' + percentage + '%)';
+                            return dashboardCurrency + ' ' + context.parsed.toLocaleString('en-US', {minimumFractionDigits: 2}) + ' (' + percentage + '%)';
                         }
                     }
                 }
@@ -158,6 +162,7 @@ function initCategoryChart() {
 // Custom legend for category chart
 function buildCategoryLegend() {
     const legendContainer = document.getElementById('categoryLegend');
+    if (!legendContainer) return;
     
     if (!categoryData.labels || categoryData.labels.length === 0) {
         legendContainer.innerHTML = '';
@@ -180,5 +185,94 @@ function buildCategoryLegend() {
             <span class="fw-semibold">${percentage}%</span>
         `;
         legendContainer.appendChild(item);
+    });
+}
+
+/* Transaction Modal Functions */
+
+function openCreateIncomeModal() {
+    document.getElementById('incomeForm').reset();
+    document.getElementById('income-id').value = '';
+    document.getElementById('incomeModalLabel').textContent = 'Add Income';
+    document.getElementById('income-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('income-currency').value = dashboardCurrency;
+    
+    const modal = new bootstrap.Modal(document.getElementById('incomeModal'));
+    modal.show();
+}
+
+function openCreateExpenseModal() {
+    document.getElementById('expenseForm').reset();
+    document.getElementById('expense-id').value = '';
+    document.getElementById('expenseModalLabel').textContent = 'Add Expense';
+    document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('expense-currency').value = dashboardCurrency;
+    
+    const modal = new bootstrap.Modal(document.getElementById('expenseModal'));
+    modal.show();
+}
+
+function saveIncome() {
+    const data = {
+        source_id: document.getElementById('income-source').value,
+        amount: document.getElementById('income-amount').value,
+        currency: document.getElementById('income-currency').value,
+        transaction_date: document.getElementById('income-date').value,
+        description: document.getElementById('income-description').value,
+        status: document.getElementById('income-status').value,
+    };
+    
+    fetch('/api/income/create/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred');
+    });
+}
+
+function saveExpense() {
+    const data = {
+        category_id: document.getElementById('expense-category').value,
+        amount: document.getElementById('expense-amount').value,
+        currency: document.getElementById('expense-currency').value,
+        transaction_date: document.getElementById('expense-date').value,
+        description: document.getElementById('expense-description').value,
+        status: document.getElementById('expense-status').value,
+        budget_id: document.getElementById('expense-budget').value || null,
+    };
+    
+    fetch('/api/expense/create/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred');
     });
 }
