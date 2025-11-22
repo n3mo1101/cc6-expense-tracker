@@ -177,10 +177,83 @@ def expenses_view(request):
     return render(request, 'expenses.html')
 
 
+# ===== BUDGETS VIEW =====
 @login_required
 def budgets_view(request):
-    """Manage budgets"""
-    return render(request, 'budgets.html')
+    """View and manage budgets"""
+    user = request.user
+    
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    today = timezone.now().date()
+    
+    # Get all budgets
+    budgets = Budget.objects.filter(user=user).prefetch_related('category_filters')
+    
+    active_budgets = []
+    inactive_budgets = []
+    
+    for budget in budgets:
+        # Calculate additional fields for display
+        budget_data = {
+            'id': str(budget.id),
+            'name': budget.name,
+            'amount': budget.amount,
+            'currency': budget.currency,
+            'spent_amount': budget.spent_amount,
+            'remaining_amount': budget.remaining_amount,
+            'percentage_used': min(budget.percentage_used, 100),
+            'start_date': budget.start_date,
+            'end_date': budget.end_date,
+            'recurrence_pattern': budget.recurrence_pattern,
+            'budget_type': budget.budget_type,
+            'status': budget.status,
+        }
+        
+        # Calculate days remaining and daily allowance
+        if budget.end_date and budget.end_date >= today:
+            days_remaining = (budget.end_date - today).days + 1
+            budget_data['days_remaining'] = days_remaining
+            budget_data['daily_allowance'] = budget.remaining_amount / days_remaining if days_remaining > 0 else 0
+        else:
+            budget_data['days_remaining'] = 0
+            budget_data['daily_allowance'] = 0
+        
+        # Calculate time progress (how far through the budget period)
+        if budget.start_date and budget.end_date:
+            total_days = (budget.end_date - budget.start_date).days + 1
+            days_passed = (today - budget.start_date).days
+            budget_data['time_progress'] = min(max((days_passed / total_days) * 100, 0), 100) if total_days > 0 else 0
+        else:
+            budget_data['time_progress'] = 0
+        
+        # Convert to object-like dict for template access
+        class BudgetDisplay:
+            def __init__(self, data):
+                for key, value in data.items():
+                    setattr(self, key, value)
+        
+        budget_obj = BudgetDisplay(budget_data)
+        
+        if budget.status == 'active':
+            active_budgets.append(budget_obj)
+        else:
+            inactive_budgets.append(budget_obj)
+    
+    # Get categories and currencies for forms
+    categories = Category.objects.filter(user=user)
+    currencies = CurrencyService.get_all_currencies()
+    
+    context = {
+        'active_budgets': active_budgets,
+        'inactive_budgets': inactive_budgets,
+        'categories': categories,
+        'currencies': currencies,
+        'primary_currency': user.profile.primary_currency if hasattr(user, 'profile') else 'PHP',
+    }
+    
+    return render(request, 'budgets.html', context)
 
 
 @login_required
@@ -189,7 +262,7 @@ def categories_view(request):
     return render(request, 'categories.html')
 
 
-# ===== CRUD FUNCTIONS =====
+# ===== Transaction CRUD Endpoints =====
 @login_required
 @require_POST
 def create_income(request):
@@ -501,3 +574,155 @@ def get_transaction_detail(request, transaction_type, transaction_id):
         del detail['budget']
     
     return JsonResponse({'success': True, 'data': detail})
+
+
+# ===== BUDGET API ENDPOINTS =====
+@login_required
+def get_budget_detail(request, budget_id):
+    """Get budget details for modal"""
+    user = request.user
+    
+    try:
+        budget = Budget.objects.prefetch_related('category_filters').get(id=budget_id, user=user)
+        
+        data = {
+            'id': str(budget.id),
+            'name': budget.name,
+            'amount': str(budget.amount),
+            'currency': budget.currency,
+            'spent_amount': str(budget.spent_amount),
+            'remaining_amount': str(budget.remaining_amount),
+            'percentage_used': budget.percentage_used,
+            'start_date': budget.start_date.isoformat(),
+            'end_date': budget.end_date.isoformat() if budget.end_date else None,
+            'recurrence_pattern': budget.recurrence_pattern,
+            'budget_type': budget.budget_type,
+            'status': budget.status,
+            'category_ids': [str(c.id) for c in budget.category_filters.all()],
+            'category_names': [c.name for c in budget.category_filters.all()],
+        }
+        
+        return JsonResponse({'success': True, 'data': data})
+    
+    except Budget.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Budget not found'}, status=404)
+
+
+@login_required
+@require_POST
+def create_budget(request):
+    """Create new budget"""
+    user = request.user
+    
+    try:
+        data = json.loads(request.body)
+        
+        budget = Budget.objects.create(
+            user=user,
+            name=data['name'],
+            amount=Decimal(data['amount']),
+            currency=data['currency'],
+            start_date=data['start_date'],
+            end_date=data.get('end_date') or None,
+            recurrence_pattern=data.get('recurrence_pattern', 'monthly'),
+            budget_type=data.get('budget_type', 'manual'),
+            status='active',
+        )
+        
+        # Add category filters if applicable
+        if data.get('budget_type') == 'category_filter' and data.get('category_ids'):
+            categories = Category.objects.filter(id__in=data['category_ids'], user=user)
+            budget.category_filters.set(categories)
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Budget created successfully',
+            'id': str(budget.id)
+        })
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def update_budget(request, budget_id):
+    """Update existing budget"""
+    user = request.user
+    
+    try:
+        data = json.loads(request.body)
+        budget = Budget.objects.get(id=budget_id, user=user)
+        
+        budget.name = data.get('name', budget.name)
+        budget.amount = Decimal(data['amount']) if 'amount' in data else budget.amount
+        budget.currency = data.get('currency', budget.currency)
+        budget.start_date = data.get('start_date', budget.start_date)
+        budget.end_date = data.get('end_date') or None
+        budget.recurrence_pattern = data.get('recurrence_pattern', budget.recurrence_pattern)
+        budget.budget_type = data.get('budget_type', budget.budget_type)
+        budget.save()
+        
+        # Update category filters if applicable
+        if data.get('budget_type') == 'category_filter':
+            if 'category_ids' in data:
+                categories = Category.objects.filter(id__in=data['category_ids'], user=user)
+                budget.category_filters.set(categories)
+        else:
+            budget.category_filters.clear()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Budget updated successfully'
+        })
+    
+    except Budget.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Budget not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def toggle_budget_status(request, budget_id):
+    """Toggle budget active/inactive status"""
+    user = request.user
+    
+    try:
+        data = json.loads(request.body)
+        budget = Budget.objects.get(id=budget_id, user=user)
+        
+        new_status = data.get('status', 'inactive' if budget.status == 'active' else 'active')
+        budget.status = new_status
+        budget.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Budget {"activated" if new_status == "active" else "deactivated"} successfully'
+        })
+    
+    except Budget.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Budget not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def delete_budget(request, budget_id):
+    """Delete budget"""
+    user = request.user
+    
+    try:
+        budget = Budget.objects.get(id=budget_id, user=user)
+        budget.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Budget deleted successfully'
+        })
+    
+    except Budget.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Budget not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)

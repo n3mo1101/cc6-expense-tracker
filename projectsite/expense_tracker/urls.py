@@ -27,4 +27,11 @@ urlpatterns = [
          views.delete_transaction, name='delete_transaction'),
     path('api/transaction/<str:transaction_type>/<uuid:transaction_id>/complete/', 
          views.mark_transaction_complete, name='mark_transaction_complete'),
+
+     # Budget API endpoints
+     path('api/budget/create/', views.create_budget, name='create_budget'),
+     path('api/budget/<uuid:budget_id>/', views.get_budget_detail, name='budget_detail'),
+     path('api/budget/<uuid:budget_id>/update/', views.update_budget, name='update_budget'),
+     path('api/budget/<uuid:budget_id>/toggle-status/', views.toggle_budget_status, name='toggle_budget_status'),
+     path('api/budget/<uuid:budget_id>/delete/', views.delete_budget, name='delete_budget'),
 ]

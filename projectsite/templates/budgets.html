@@ -1,8 +1,312 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}MoneyLens{% endblock %}
+{% block title %}Budgets - MoneyLens{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/budgets.css' %}">
+{% endblock %}
 
+{% block content %}
+<!-- Toast Container -->
+<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+<!-- Header -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Budgets</h1>
+        <p class="text-muted mb-0">
+            <span id="active-count">{{ active_budgets|length }}</span> active budget{{ active_budgets|length|pluralize }}
+        </p>
+    </div>
+    <button type="button" class="btn btn-primary" onclick="openCreateBudgetModal()">
+        <i class="bi bi-plus-lg me-2"></i>Add Budget
+    </button>
+</div>
+
+<!-- Active Budgets Section -->
+<div class="mb-4">
+    <h5 class="fw-semibold mb-3">
+        <i class="bi bi-lightning-charge text-success me-2"></i>Active Budgets
+    </h5>
+    
+    {% if active_budgets %}
+    <div class="row g-4" id="active-budgets-container">
+        {% for budget in active_budgets %}
+        <div class="col-12 col-lg-6">
+            <div class="budget-card" data-id="{{ budget.id }}" onclick="viewBudget('{{ budget.id }}')">
+                <div class="budget-card-header">
+                    <div class="budget-info">
+                        <h4 class="budget-name">{{ budget.name }}</h4>
+                        <div class="budget-amount">
+                            <span class="amount-left">{{ budget.currency }} {{ budget.remaining_amount|floatformat:2 }}</span>
+                            <span class="amount-total">left of {{ budget.currency }} {{ budget.amount|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                    {% if budget.recurrence_pattern != 'one_time' %}
+                    <div class="budget-recurring-icon" title="Recurring {{ budget.recurrence_pattern }}">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="budget-card-body">
+                    <div class="budget-progress-section">
+                        <div class="progress-dates">
+                            <span>{{ budget.start_date|date:"M j" }}</span>
+                            <div class="today-marker">Today</div>
+                            <span>{{ budget.end_date|date:"M j" }}</span>
+                        </div>
+                        <div class="budget-progress-bar">
+                            <div class="progress-fill {% if budget.percentage_used > 90 %}danger{% elif budget.percentage_used > 70 %}warning{% endif %}" 
+                                 style="width: {{ budget.percentage_used }}%"></div>
+                            <div class="progress-today-line" style="left: {{ budget.time_progress }}%"></div>
+                        </div>
+                        <div class="progress-percentage">{{ budget.percentage_used|floatformat:0 }}%</div>
+                    </div>
+                    
+                    <div class="budget-daily-info">
+                        You can spend <strong>{{ budget.currency }} {{ budget.daily_allowance|floatformat:2 }}</strong>/day for <strong>{{ budget.days_remaining }}</strong> more days
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-wallet2"></i>
+        <h5>No active budgets</h5>
+        <p class="text-muted">Create a budget to start tracking your spending</p>
+        <button type="button" class="btn btn-primary" onclick="openCreateBudgetModal()">
+            <i class="bi bi-plus-lg me-2"></i>Create Budget
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Inactive Budgets Section -->
+{% if inactive_budgets %}
+<div class="mb-4">
+    <h5 class="fw-semibold mb-3">
+        <i class="bi bi-archive text-secondary me-2"></i>Inactive Budgets
+    </h5>
+    
+    <div class="row g-4" id="inactive-budgets-container">
+        {% for budget in inactive_budgets %}
+        <div class="col-12 col-lg-6">
+            <div class="budget-card inactive" data-id="{{ budget.id }}" onclick="viewBudget('{{ budget.id }}')">
+                <div class="budget-card-header">
+                    <div class="budget-info">
+                        <h4 class="budget-name">{{ budget.name }}</h4>
+                        <div class="budget-amount">
+                            <span class="amount-left">{{ budget.currency }} {{ budget.remaining_amount|floatformat:2 }}</span>
+                            <span class="amount-total">left of {{ budget.currency }} {{ budget.amount|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                    {% if budget.recurrence_pattern != 'one_time' %}
+                    <div class="budget-recurring-icon" title="Recurring {{ budget.recurrence_pattern }}">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="budget-card-body">
+                    <div class="budget-progress-section">
+                        <div class="progress-dates">
+                            <span>{{ budget.start_date|date:"M j" }}</span>
+                            <span>{{ budget.end_date|date:"M j" }}</span>
+                        </div>
+                        <div class="budget-progress-bar">
+                            <div class="progress-fill" style="width: {{ budget.percentage_used }}%"></div>
+                        </div>
+                        <div class="progress-percentage">{{ budget.percentage_used|floatformat:0 }}%</div>
+                    </div>
+                    
+                    <div class="budget-status-info">
+                        <span class="badge bg-secondary">Inactive</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Budget Detail Modal -->
+<div class="modal fade" id="budgetDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Budget Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <h4 id="detail-name" class="fw-bold mb-2">Budget Name</h4>
+                    <span id="detail-status" class="badge bg-success">Active</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Budget Amount</span>
+                    <span id="detail-amount" class="detail-value">PHP 0.00</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Spent</span>
+                    <span id="detail-spent" class="detail-value text-danger">PHP 0.00</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Remaining</span>
+                    <span id="detail-remaining" class="detail-value text-success">PHP 0.00</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Period</span>
+                    <span id="detail-period" class="detail-value">Nov 1 - Nov 30</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Recurrence</span>
+                    <span id="detail-recurrence" class="detail-value">One Time</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Type</span>
+                    <span id="detail-type" class="detail-value">Manual</span>
+                </div>
+                <div class="detail-row" id="detail-categories-row" style="display: none;">
+                    <span class="detail-label">Categories</span>
+                    <span id="detail-categories" class="detail-value">-</span>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-outline-danger" onclick="openDeleteBudgetModal()">
+                    <i class="bi bi-trash me-1"></i>Delete
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" id="btn-toggle-status" class="btn btn-outline-secondary" onclick="toggleBudgetStatus()">
+                        <i class="bi bi-pause-circle me-1"></i>Deactivate
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="openEditBudgetModal()">
+                        <i class="bi bi-pencil me-1"></i>Edit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Budget Modal -->
+<div class="modal fade" id="budgetModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="budgetModalLabel">Create Budget</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="budgetForm">
+                    <input type="hidden" id="budget-id">
+                    
+                    <div class="mb-3">
+                        <label for="budget-name" class="form-label">Budget Name</label>
+                        <input type="text" class="form-control" id="budget-name" placeholder="e.g., Living Expenses" required>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-8">
+                            <label for="budget-amount" class="form-label">Amount</label>
+                            <input type="number" class="form-control" id="budget-amount" step="0.01" min="0.01" required>
+                        </div>
+                        <div class="col-4">
+                            <label for="budget-currency" class="form-label">Currency</label>
+                            <select class="form-select" id="budget-currency" required>
+                                {% for currency in currencies %}
+                                <option value="{{ currency.code }}">{{ currency.code }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label for="budget-start-date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="budget-start-date" required>
+                        </div>
+                        <div class="col-6">
+                            <label for="budget-end-date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="budget-end-date">
+                            <div class="form-text">Optional for recurring</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="budget-recurrence" class="form-label">Recurrence</label>
+                        <select class="form-select" id="budget-recurrence">
+                            <option value="one_time">One Time</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly" selected>Monthly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="budget-type" class="form-label">Budget Type</label>
+                        <select class="form-select" id="budget-type" onchange="toggleCategoryFilters()">
+                            <option value="manual">Manual (track any expenses)</option>
+                            <option value="category_filter">Category Filter (auto-track specific categories)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3" id="category-filters-section" style="display: none;">
+                        <label class="form-label">Filter by Categories</label>
+                        <div class="category-checkboxes">
+                            {% for category in categories %}
+                            <div class="form-check">
+                                <input class="form-check-input budget-category" type="checkbox" 
+                                       value="{{ category.id }}" id="cat-{{ category.id }}">
+                                <label class="form-check-label" for="cat-{{ category.id }}">
+                                    {{ category.name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveBudget()">Save Budget</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteBudgetModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Delete Budget</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                <p class="mt-3 mb-0">Are you sure you want to delete <strong id="delete-budget-name"></strong>?</p>
+                <p class="text-muted small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteBudget()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const csrfToken = '{{ csrf_token }}';
+    const primaryCurrency = '{{ primary_currency }}';
+</script>
+<script src="{% static 'js/budgets.js' %}"></script>
 {% endblock %}
