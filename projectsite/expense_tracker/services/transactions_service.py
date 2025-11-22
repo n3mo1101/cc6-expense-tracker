@@ -14,7 +14,7 @@ class TransactionsService:
     """Service for handling transaction operations."""
 
     @classmethod
-    def get_combined_transactions(cls, user, filters=None, page=1, per_page=15):
+    def get_combined_transactions(cls, user, filters=None, page=1, per_page=15, for_json=False):
         """
         Get combined income and expense transactions with filtering,
         sorting, and pagination.
@@ -24,6 +24,7 @@ class TransactionsService:
             filters: dict with keys: search, type, status
             page: Page number
             per_page: Items per page
+            for_json: If True, convert dates to ISO strings for JSON response
         
         Returns:
             dict with transactions, pagination info, and filter options
@@ -73,7 +74,8 @@ class TransactionsService:
                 'amount': float(income.converted_amount or income.amount),
                 'original_amount': float(income.amount),
                 'currency': income.currency,
-                'date': income.transaction_date.isoformat(),
+                # Keep as date object for template, convert to string for JSON
+                'date': income.transaction_date.isoformat() if for_json else income.transaction_date,
                 'status': income.status,
                 'description': income.description or '',
                 'icon': income.source.icon,
@@ -88,7 +90,8 @@ class TransactionsService:
                 'amount': float(expense.converted_amount or expense.amount),
                 'original_amount': float(expense.amount),
                 'currency': expense.currency,
-                'date': expense.transaction_date.isoformat(),
+                # Keep as date object for template, convert to string for JSON
+                'date': expense.transaction_date.isoformat() if for_json else expense.transaction_date,
                 'status': expense.status,
                 'description': expense.description or '',
                 'icon': expense.category.icon,
@@ -96,7 +99,7 @@ class TransactionsService:
             })
         
         # Sort by date descending
-        transactions.sort(key=lambda x: x['date'], reverse=True)
+        transactions.sort(key=lambda x: x['date'] if isinstance(x['date'], str) else x['date'].isoformat(), reverse=True)
         
         # Pagination
         paginator = Paginator(transactions, per_page)

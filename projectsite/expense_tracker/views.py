@@ -96,13 +96,15 @@ def transactions_view(request):
     }
     page = request.GET.get('page', 1)
     
-    # Get transactions
+    # Check if AJAX request
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
+    # Get transactions - pass for_json=True for AJAX requests
     result = TransactionsService.get_combined_transactions(
-        user, filters=filters, page=page, per_page=15
+        user, filters=filters, page=page, per_page=15, for_json=is_ajax
     )
     
-    # Check if AJAX request
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    if is_ajax:
         return JsonResponse(result)
     
     # Get filter options
