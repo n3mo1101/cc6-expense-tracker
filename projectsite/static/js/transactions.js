@@ -1,6 +1,8 @@
 /* Transactions Page Scripts */
 
 let currentTransaction = null;
+let currentPage = 1;
+let searchTimeout;
 
 document.addEventListener('DOMContentLoaded', function() {
     initFilters();
@@ -10,70 +12,198 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Initialize Filters */
 function initFilters() {
     const searchInput = document.getElementById('searchInput');
-    const categoryFilter = document.getElementById('categoryFilter');
+    const typeFilter = document.getElementById('typeFilter');
     const statusFilter = document.getElementById('statusFilter');
-    
-    let searchTimeout;
     
     if (searchInput) {
         searchInput.addEventListener('input', function() {
             clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => applyFilters(), 500);
+            searchTimeout = setTimeout(() => {
+                currentPage = 1;
+                loadTransactions();
+            }, 400);
         });
     }
     
-    if (categoryFilter) {
-        categoryFilter.addEventListener('change', applyFilters);
+    if (typeFilter) {
+        typeFilter.addEventListener('change', function() {
+            currentPage = 1;
+            loadTransactions();
+        });
     }
     
     if (statusFilter) {
-        statusFilter.addEventListener('change', applyFilters);
+        statusFilter.addEventListener('change', function() {
+            currentPage = 1;
+            loadTransactions();
+        });
     }
 }
 
-/* Apply Filters */
-function applyFilters() {
-    const params = new URLSearchParams(window.location.search);
-    
+/* Load Transactions via AJAX */
+function loadTransactions() {
     const search = document.getElementById('searchInput')?.value || '';
-    const category = document.getElementById('categoryFilter')?.value || '';
+    const type = document.getElementById('typeFilter')?.value || '';
     const status = document.getElementById('statusFilter')?.value || '';
     
-    if (search) params.set('search', search);
-    else params.delete('search');
+    const params = new URLSearchParams({
+        search: search,
+        type: type,
+        status: status,
+        page: currentPage,
+        ajax: '1'
+    });
     
-    if (category) params.set('category', category);
-    else params.delete('category');
-    
-    if (status) params.set('status', status);
-    else params.delete('status');
-    
-    params.delete('page'); // Reset to page 1
-    
-    window.location.href = `${window.location.pathname}?${params.toString()}`;
+    fetch(`/transactions/?${params.toString()}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        updateTransactionsTable(data);
+    })
+    .catch(error => {
+        console.error('Error loading transactions:', error);
+    });
 }
 
-/* Sort Transactions */
-function sortBy(field) {
-    const params = new URLSearchParams(window.location.search);
-    const currentSort = params.get('sort_by');
-    const currentOrder = params.get('sort_order') || 'desc';
+/* Update Table with AJAX Data */
+function updateTransactionsTable(data) {
+    const tbody = document.getElementById('transactions-body');
     
-    params.set('sort_by', field);
+    // Update count
+    document.getElementById('total-count').textContent = data.total_count;
+    document.getElementById('plural-suffix').textContent = data.total_count === 1 ? '' : 's';
     
-    if (currentSort === field) {
-        params.set('sort_order', currentOrder === 'desc' ? 'asc' : 'desc');
+    // Update rows
+    if (data.transactions.length === 0) {
+        tbody.innerHTML = `
+            <tr id="empty-row">
+                <td colspan="4">
+                    <div class="empty-transactions">
+                        <i class="bi bi-receipt d-block"></i>
+                        <h5>No transactions found</h5>
+                        <p>Try adjusting your filters</p>
+                    </div>
+                </td>
+            </tr>
+        `;
     } else {
-        params.set('sort_order', 'desc');
+        tbody.innerHTML = data.transactions.map(t => createTransactionRow(t)).join('');
+        initTransactionRows();
     }
     
-    params.delete('page');
-    window.location.href = `${window.location.pathname}?${params.toString()}`;
+    // Update pagination
+    updatePagination(data);
+}
+
+/* Create Transaction Row HTML */
+function createTransactionRow(t) {
+    const icon = t.type === 'income' ? 'up' : 'down';
+    const sign = t.type === 'income' ? '+' : '-';
+    const amount = parseFloat(t.amount).toLocaleString('en-US', {minimumFractionDigits: 2});
+    const date = new Date(t.date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+    const desc = t.description ? `<p class="transaction-description">${truncateWords(t.description, 8)}</p>` : '';
+    const status = t.status.charAt(0).toUpperCase() + t.status.slice(1);
+    
+    return `
+        <tr class="transaction-row" data-type="${t.type}" data-id="${t.id}">
+            <!-- Desktop View -->
+            <td class="hide-mobile">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="transaction-type-icon ${t.type}">
+                        <i class="bi bi-arrow-${icon}-short"></i>
+                    </div>
+                    <div>
+                        <p class="transaction-name">${t.name}</p>
+                        ${desc}
+                    </div>
+                </div>
+            </td>
+            <td class="hide-mobile">
+                <span class="text-muted">${date}</span>
+            </td>
+            <td class="hide-mobile">
+                <span class="transaction-amount ${t.type}">${sign}${t.currency} ${amount}</span>
+            </td>
+            <td class="hide-mobile">
+                <span class="status-badge ${t.status}">${status}</span>
+            </td>
+            
+            <!-- Mobile View -->
+            <td class="show-mobile-only" colspan="4">
+                <div class="mobile-transaction-header">
+                    <div class="transaction-type-icon ${t.type}">
+                        <i class="bi bi-arrow-${icon}-short"></i>
+                    </div>
+                    <div class="mobile-transaction-info">
+                        <p class="transaction-name mb-0">${t.name}</p>
+                        <small class="text-muted">${date}</small>
+                    </div>
+                    <div class="mobile-amount-status">
+                        <span class="transaction-amount ${t.type}">${sign}${t.currency} ${amount}</span>
+                        <span class="status-badge ${t.status}">${status}</span>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+/* Truncate words helper */
+function truncateWords(str, numWords) {
+    if (!str) return '';
+    const words = str.split(' ');
+    if (words.length <= numWords) return str;
+    return words.slice(0, numWords).join(' ') + '...';
+}
+
+/* Update Pagination */
+function updatePagination(data) {
+    const footer = document.getElementById('pagination-footer');
+    
+    if (data.total_pages <= 1) {
+        footer.innerHTML = '<span class="pagination-info text-muted">Showing all results</span>';
+        return;
+    }
+    
+    const prevDisabled = !data.has_previous ? 'disabled' : '';
+    const nextDisabled = !data.has_next ? 'disabled' : '';
+    
+    footer.innerHTML = `
+        <span class="pagination-info">
+            Page <span id="current-page">${data.page}</span> of <span id="total-pages">${data.total_pages}</span>
+        </span>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item ${prevDisabled}">
+                    <a class="page-link" href="#" onclick="loadPage(${data.page - 1}); return false;">&laquo; Previous</a>
+                </li>
+                <li class="page-item ${nextDisabled}">
+                    <a class="page-link" href="#" onclick="loadPage(${data.page + 1}); return false;">Next &raquo;</a>
+                </li>
+            </ul>
+        </nav>
+    `;
+    
+    currentPage = data.page;
+}
+
+/* Load Specific Page */
+function loadPage(page) {
+    if (page < 1) return;
+    currentPage = page;
+    loadTransactions();
 }
 
 /* Clear Filters */
 function clearFilters() {
-    window.location.href = window.location.pathname;
+    document.getElementById('searchInput').value = '';
+    document.getElementById('typeFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    currentPage = 1;
+    loadTransactions();
 }
 
 /* Initialize Transaction Row Clicks */
@@ -134,7 +264,6 @@ function showDetailModal(transaction) {
     
     document.getElementById('detail-description').textContent = transaction.description || '-';
     
-    // Show/hide mark complete button
     const completeBtn = document.getElementById('btn-mark-complete');
     if (transaction.status === 'pending') {
         completeBtn.style.display = 'inline-block';
@@ -151,8 +280,6 @@ function openCreateIncomeModal() {
     document.getElementById('incomeForm').reset();
     document.getElementById('income-id').value = '';
     document.getElementById('incomeModalLabel').textContent = 'Add Income';
-    
-    // Set default date to today
     document.getElementById('income-date').value = new Date().toISOString().split('T')[0];
     document.getElementById('income-currency').value = primaryCurrency;
     
@@ -165,8 +292,6 @@ function openCreateExpenseModal() {
     document.getElementById('expenseForm').reset();
     document.getElementById('expense-id').value = '';
     document.getElementById('expenseModalLabel').textContent = 'Add Expense';
-    
-    // Set default date to today
     document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
     document.getElementById('expense-currency').value = primaryCurrency;
     
@@ -234,7 +359,8 @@ function saveIncome() {
     .then(data => {
         if (data.success) {
             showToast(data.message, 'success');
-            setTimeout(() => window.location.reload(), 1000);
+            bootstrap.Modal.getInstance(document.getElementById('incomeModal')).hide();
+            loadTransactions();
         } else {
             showToast(data.error, 'error');
         }
@@ -272,7 +398,8 @@ function saveExpense() {
     .then(data => {
         if (data.success) {
             showToast(data.message, 'success');
-            setTimeout(() => window.location.reload(), 1000);
+            bootstrap.Modal.getInstance(document.getElementById('expenseModal')).hide();
+            loadTransactions();
         } else {
             showToast(data.error, 'error');
         }
@@ -297,7 +424,8 @@ function markComplete() {
     .then(data => {
         if (data.success) {
             showToast(data.message, 'success');
-            setTimeout(() => window.location.reload(), 1000);
+            bootstrap.Modal.getInstance(document.getElementById('detailModal')).hide();
+            loadTransactions();
         } else {
             showToast(data.error, 'error');
         }
@@ -334,7 +462,8 @@ function confirmDelete() {
     .then(data => {
         if (data.success) {
             showToast(data.message, 'success');
-            setTimeout(() => window.location.reload(), 1000);
+            bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+            loadTransactions();
         } else {
             showToast(data.error, 'error');
         }

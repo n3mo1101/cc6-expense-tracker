@@ -21,7 +21,7 @@ class TransactionsService:
         
         Args:
             user: User object
-            filters: dict with keys: search, category, status, sort_by, sort_order
+            filters: dict with keys: search, type, status
             page: Page number
             per_page: Items per page
         
@@ -36,6 +36,13 @@ class TransactionsService:
         # Get expenses
         expenses = Expense.objects.filter(user=user).select_related('category')
         
+        # Apply type filter
+        type_filter = filters.get('type', '')
+        if type_filter == 'income':
+            expenses = expenses.none()
+        elif type_filter == 'expense':
+            incomes = incomes.none()
+        
         # Apply search filter
         search = filters.get('search', '').strip()
         if search:
@@ -47,18 +54,6 @@ class TransactionsService:
                 Q(category__name__icontains=search) |
                 Q(description__icontains=search)
             )
-        
-        # Apply category/source filter
-        category_filter = filters.get('category', '')
-        if category_filter:
-            if category_filter.startswith('income:'):
-                source_id = category_filter.replace('income:', '')
-                incomes = incomes.filter(source_id=source_id)
-                expenses = expenses.none()
-            elif category_filter.startswith('expense:'):
-                cat_id = category_filter.replace('expense:', '')
-                expenses = expenses.filter(category_id=cat_id)
-                incomes = incomes.none()
         
         # Apply status filter
         status_filter = filters.get('status', '')
@@ -75,12 +70,12 @@ class TransactionsService:
                 'type': 'income',
                 'name': income.source.name,
                 'source_id': str(income.source.id),
-                'amount': income.converted_amount or income.amount,
-                'original_amount': income.amount,
+                'amount': float(income.converted_amount or income.amount),
+                'original_amount': float(income.amount),
                 'currency': income.currency,
-                'date': income.transaction_date,
+                'date': income.transaction_date.isoformat(),
                 'status': income.status,
-                'description': income.description,
+                'description': income.description or '',
                 'icon': income.source.icon,
             })
         
@@ -90,25 +85,18 @@ class TransactionsService:
                 'type': 'expense',
                 'name': expense.category.name,
                 'category_id': str(expense.category.id),
-                'amount': expense.converted_amount or expense.amount,
-                'original_amount': expense.amount,
+                'amount': float(expense.converted_amount or expense.amount),
+                'original_amount': float(expense.amount),
                 'currency': expense.currency,
-                'date': expense.transaction_date,
+                'date': expense.transaction_date.isoformat(),
                 'status': expense.status,
-                'description': expense.description,
+                'description': expense.description or '',
                 'icon': expense.category.icon,
                 'budget_id': str(expense.budget_id) if expense.budget_id else None,
             })
         
-        # Sort transactions
-        sort_by = filters.get('sort_by', 'date')
-        sort_order = filters.get('sort_order', 'desc')
-        reverse = sort_order == 'desc'
-        
-        if sort_by == 'date':
-            transactions.sort(key=lambda x: x['date'], reverse=reverse)
-        elif sort_by == 'amount':
-            transactions.sort(key=lambda x: x['amount'], reverse=reverse)
+        # Sort by date descending
+        transactions.sort(key=lambda x: x['date'], reverse=True)
         
         # Pagination
         paginator = Paginator(transactions, per_page)

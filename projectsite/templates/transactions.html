@@ -15,9 +15,9 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
     <div>
         <h1 class="h3 fw-bold mb-1">Transactions</h1>
-        <p class="text-muted mb-0">{{ total_count }} transaction{{ total_count|pluralize }}</p>
+        <p class="text-muted mb-0"><span id="total-count">{{ total_count }}</span> transaction<span id="plural-suffix">{{ total_count|pluralize }}</span></p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="header-buttons">
         <button type="button" class="btn btn-success" onclick="openCreateIncomeModal()">
             <i class="bi bi-plus-lg me-2"></i>Add Income
         </button>
@@ -31,42 +31,30 @@
 <div class="card border mb-4">
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-md-4">
+            <div class="col-12 col-md-6">
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
                     <input type="text" class="form-control" id="searchInput" 
                            placeholder="Search transactions..." value="{{ filters.search }}">
                 </div>
             </div>
-            <div class="col-md-3">
-                <select class="form-select" id="categoryFilter">
-                    <option value="">All Categories</option>
-                    <optgroup label="Income Sources">
-                        {% for source in filter_options.income_sources %}
-                        <option value="income:{{ source.id }}" {% if filters.category == 'income:'|add:source.id|stringformat:'s' %}selected{% endif %}>
-                            {{ source.name }}
-                        </option>
-                        {% endfor %}
-                    </optgroup>
-                    <optgroup label="Expense Categories">
-                        {% for cat in filter_options.categories %}
-                        <option value="expense:{{ cat.id }}" {% if filters.category == 'expense:'|add:cat.id|stringformat:'s' %}selected{% endif %}>
-                            {{ cat.name }}
-                        </option>
-                        {% endfor %}
-                    </optgroup>
+            <div class="col-6 col-md-2">
+                <select class="form-select" id="typeFilter">
+                    <option value="">All Types</option>
+                    <option value="income" {% if filters.type == 'income' %}selected{% endif %}>Income</option>
+                    <option value="expense" {% if filters.type == 'expense' %}selected{% endif %}>Expense</option>
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-6 col-md-2">
                 <select class="form-select" id="statusFilter">
                     <option value="">All Status</option>
                     <option value="pending" {% if filters.status == 'pending' %}selected{% endif %}>Pending</option>
                     <option value="complete" {% if filters.status == 'complete' %}selected{% endif %}>Complete</option>
                 </select>
             </div>
-            <div class="col-md-3 text-md-end">
-                <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
-                    <i class="bi bi-x-lg me-1"></i>Clear Filters
+            <div class="col-12 col-md-2">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                    <i class="bi bi-x-lg me-1"></i>Clear
                 </button>
             </div>
         </div>
@@ -76,114 +64,41 @@
 <!-- Transactions Table -->
 <div class="card border">
     <div class="table-responsive">
-        <table class="table table-transactions">
+        <table class="table table-transactions" id="transactions-table">
             <thead>
                 <tr>
                     <th>Transaction</th>
-                    <th>
-                        Date
-                        <button class="sort-btn {% if filters.sort_by == 'date' %}active{% endif %}" onclick="sortBy('date')">
-                            <i class="bi bi-arrow-down-up"></i>
-                        </button>
-                    </th>
-                    <th>
-                        Amount
-                        <button class="sort-btn {% if filters.sort_by == 'amount' %}active{% endif %}" onclick="sortBy('amount')">
-                            <i class="bi bi-arrow-down-up"></i>
-                        </button>
-                    </th>
+                    <th>Date</th>
+                    <th>Amount</th>
                     <th>Status</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for transaction in transactions %}
-                <tr class="transaction-row" data-type="{{ transaction.type }}" data-id="{{ transaction.id }}">
-                    <!-- Desktop View -->
-                    <td class="hide-mobile">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="transaction-type-icon {{ transaction.type }}">
-                                <i class="bi bi-arrow-{% if transaction.type == 'income' %}up{% else %}down{% endif %}-short"></i>
-                            </div>
-                            <div>
-                                <p class="transaction-name">{{ transaction.name }}</p>
-                                {% if transaction.description %}
-                                <p class="transaction-description">{{ transaction.description }}</p>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </td>
-                    <td class="hide-mobile">
-                        <span class="text-muted">{{ transaction.date|date:"M d, Y" }}</span>
-                    </td>
-                    <td class="hide-mobile">
-                        <span class="transaction-amount {{ transaction.type }}">
-                            {% if transaction.type == 'income' %}+{% else %}-{% endif %}{{ transaction.currency }} {{ transaction.amount|floatformat:2 }}
-                        </span>
-                    </td>
-                    <td class="hide-mobile">
-                        <span class="status-badge {{ transaction.status }}">{{ transaction.status|capfirst }}</span>
-                    </td>
-                    
-                    <!-- Mobile View -->
-                    <td class="show-mobile-only" colspan="4">
-                        <div class="mobile-transaction-header">
-                            <div class="transaction-type-icon {{ transaction.type }}">
-                                <i class="bi bi-arrow-{% if transaction.type == 'income' %}up{% else %}down{% endif %}-short"></i>
-                            </div>
-                            <div class="mobile-transaction-info">
-                                <p class="transaction-name mb-0">{{ transaction.name }}</p>
-                                <small class="text-muted">{{ transaction.date|date:"M d, Y" }}</small>
-                            </div>
-                            <div class="mobile-amount-status">
-                                <span class="transaction-amount {{ transaction.type }}">
-                                    {% if transaction.type == 'income' %}+{% else %}-{% endif %}{{ transaction.currency }} {{ transaction.amount|floatformat:2 }}
-                                </span>
-                                <span class="status-badge {{ transaction.status }}">{{ transaction.status|capfirst }}</span>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4">
-                        <div class="empty-transactions">
-                            <i class="bi bi-receipt d-block"></i>
-                            <h5>No transactions found</h5>
-                            <p>Start by adding your first transaction</p>
-                            <button type="button" class="btn btn-primary" onclick="openCreateIncomeModal()">
-                                <i class="bi bi-plus-lg me-2"></i>Add Transaction
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
+            <tbody id="transactions-body">
+                {% include 'partials/transaction_rows.html' %}
             </tbody>
         </table>
     </div>
     
     <!-- Pagination -->
-    {% if total_pages > 1 %}
-    <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+    <div class="card-footer bg-transparent d-flex justify-content-between align-items-center" id="pagination-footer">
+        {% if total_pages > 1 %}
         <span class="pagination-info">
-            Page {{ page }} of {{ total_pages }}
+            Page <span id="current-page">{{ page }}</span> of <span id="total-pages">{{ total_pages }}</span>
         </span>
         <nav>
             <ul class="pagination pagination-sm mb-0">
-                {% if has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page|add:'-1' }}&{{ request.GET.urlencode }}">&laquo; Previous</a>
+                <li class="page-item {% if not has_previous %}disabled{% endif %}">
+                    <a class="page-link" href="#" onclick="loadPage({{ page|add:'-1' }}); return false;">&laquo; Previous</a>
                 </li>
-                {% endif %}
-                
-                {% if has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page|add:'1' }}&{{ request.GET.urlencode }}">Next &raquo;</a>
+                <li class="page-item {% if not has_next %}disabled{% endif %}">
+                    <a class="page-link" href="#" onclick="loadPage({{ page|add:'1' }}); return false;">Next &raquo;</a>
                 </li>
-                {% endif %}
             </ul>
         </nav>
+        {% else %}
+        <span class="pagination-info text-muted">Showing all results</span>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 
 <!-- Detail Modal -->

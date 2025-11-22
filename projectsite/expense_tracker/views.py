@@ -91,10 +91,8 @@ def transactions_view(request):
     # Get filter parameters
     filters = {
         'search': request.GET.get('search', ''),
-        'category': request.GET.get('category', ''),
+        'type': request.GET.get('type', ''),
         'status': request.GET.get('status', ''),
-        'sort_by': request.GET.get('sort_by', 'date'),
-        'sort_order': request.GET.get('sort_order', 'desc'),
     }
     page = request.GET.get('page', 1)
     
@@ -102,6 +100,10 @@ def transactions_view(request):
     result = TransactionsService.get_combined_transactions(
         user, filters=filters, page=page, per_page=15
     )
+    
+    # Check if AJAX request
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse(result)
     
     # Get filter options
     filter_options = TransactionsService.get_filter_options(user)
@@ -125,7 +127,7 @@ def transactions_view(request):
         'income_sources': income_sources,
         'budgets': budgets,
         'currencies': currencies,
-        'primary_currency': user.profile.primary_currency,
+        'primary_currency': user.profile.primary_currency if hasattr(user, 'profile') else 'PHP',
     }
     
     return render(request, 'transactions.html', context)
