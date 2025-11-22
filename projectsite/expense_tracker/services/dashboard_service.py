@@ -326,7 +326,8 @@ class DashboardService:
             transactions.append({
                 'type': 'income',
                 'name': income.source.name if income.source else 'Unknown',
-                'amount': safe_decimal(income.converted_amount) or safe_decimal(income.amount),
+                'amount': safe_decimal(income.amount),
+                'converted_amount': safe_decimal(income.converted_amount) if income.converted_amount else None,
                 'currency': income.currency or 'PHP',
                 'date': income.transaction_date,
                 'status': income.status,
@@ -338,7 +339,8 @@ class DashboardService:
             transactions.append({
                 'type': 'expense',
                 'name': expense.category.name if expense.category else 'Unknown',
-                'amount': safe_decimal(expense.converted_amount) or safe_decimal(expense.amount),
+                'amount': safe_decimal(expense.amount),
+                'converted_amount': safe_decimal(expense.converted_amount) if expense.converted_amount else None,
                 'currency': expense.currency or 'PHP',
                 'date': expense.transaction_date,
                 'status': expense.status,
