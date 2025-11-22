@@ -316,6 +316,19 @@ function showDetailModal(transaction) {
     bsModal.show();
 }
 
+/* Toggle Recurring Fields */
+function toggleRecurringFields(type, show) {
+    const recurringFields = document.getElementById(`${type}-recurring-fields`);
+    const recurringCheckbox = document.getElementById(`${type}-is-recurring`);
+    
+    if (recurringFields) {
+        recurringFields.style.display = show ? 'block' : 'none';
+    }
+    if (recurringCheckbox) {
+        recurringCheckbox.checked = show;
+    }
+}
+
 /* Open Create Income Modal */
 function openCreateIncomeModal() {
     document.getElementById('incomeForm').reset();
@@ -323,6 +336,9 @@ function openCreateIncomeModal() {
     document.getElementById('incomeModalLabel').textContent = 'Add Income';
     document.getElementById('income-date').value = new Date().toISOString().split('T')[0];
     document.getElementById('income-currency').value = primaryCurrency;
+    
+    // Reset recurring fields
+    toggleRecurringFields('income', false);
     
     const modal = new bootstrap.Modal(document.getElementById('incomeModal'));
     modal.show();
@@ -335,6 +351,9 @@ function openCreateExpenseModal() {
     document.getElementById('expenseModalLabel').textContent = 'Add Expense';
     document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
     document.getElementById('expense-currency').value = primaryCurrency;
+    
+    // Reset recurring fields
+    toggleRecurringFields('expense', false);
     
     const modal = new bootstrap.Modal(document.getElementById('expenseModal'));
     modal.show();
@@ -377,6 +396,8 @@ function openEditModal() {
 /* Save Income */
 function saveIncome() {
     const id = document.getElementById('income-id').value;
+    const isRecurring = document.getElementById('income-is-recurring')?.checked || false;
+    
     const data = {
         source_id: document.getElementById('income-source').value,
         amount: document.getElementById('income-amount').value,
@@ -385,6 +406,13 @@ function saveIncome() {
         description: document.getElementById('income-description').value,
         status: document.getElementById('income-status').value,
     };
+    
+    // Add recurring fields if checked
+    if (isRecurring) {
+        data.is_recurring = true;
+        data.recurrence_pattern = document.getElementById('income-recurrence-pattern')?.value || 'monthly';
+        data.recurrence_end_date = document.getElementById('income-recurrence-end')?.value || null;
+    }
     
     const url = id ? `/api/transaction/income/${id}/update/` : '/api/income/create/';
     
@@ -415,6 +443,8 @@ function saveIncome() {
 /* Save Expense */
 function saveExpense() {
     const id = document.getElementById('expense-id').value;
+    const isRecurring = document.getElementById('expense-is-recurring')?.checked || false;
+    
     const data = {
         category_id: document.getElementById('expense-category').value,
         amount: document.getElementById('expense-amount').value,
@@ -424,6 +454,13 @@ function saveExpense() {
         status: document.getElementById('expense-status').value,
         budget_id: document.getElementById('expense-budget').value || null,
     };
+    
+    // Add recurring fields if checked
+    if (isRecurring) {
+        data.is_recurring = true;
+        data.recurrence_pattern = document.getElementById('expense-recurrence-pattern')?.value || 'monthly';
+        data.recurrence_end_date = document.getElementById('expense-recurrence-end')?.value || null;
+    }
     
     const url = id ? `/api/transaction/expense/${id}/update/` : '/api/expense/create/';
     

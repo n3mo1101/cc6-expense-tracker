@@ -193,7 +193,7 @@ def categories_view(request):
 @login_required
 @require_POST
 def create_income(request):
-    """Create new income transaction"""
+    """Create new income transaction (with optional recurring)"""
     user = request.user
     
     try:
@@ -221,8 +221,30 @@ def create_income(request):
                 converted_amount = conversion['converted_amount']
                 exchange_rate = conversion['rate']
             except Exception:
-                # If conversion fails, use original amount
                 converted_amount = amount
+        
+        # Check if this is a recurring transaction
+        is_recurring = data.get('is_recurring', False)
+        recurring_transaction = None
+        
+        if is_recurring:
+            from expense_tracker.models import RecurringTransaction
+            
+            recurrence_pattern = data.get('recurrence_pattern', 'monthly')
+            end_date = data.get('recurrence_end_date') or None
+            
+            recurring_transaction = RecurringTransaction.objects.create(
+                user=user,
+                type='income',
+                income_source=source,
+                amount=amount,
+                currency=currency,
+                description=data.get('description', ''),
+                recurrence_pattern=recurrence_pattern,
+                start_date=data['transaction_date'],
+                end_date=end_date,
+                is_active=True,
+            )
         
         income = Income.objects.create(
             user=user,
@@ -234,11 +256,12 @@ def create_income(request):
             transaction_date=data['transaction_date'],
             description=data.get('description', ''),
             status=data.get('status', 'pending'),
+            recurring_transaction=recurring_transaction,
         )
         
         return JsonResponse({
             'success': True,
-            'message': 'Income created successfully',
+            'message': 'Income created successfully' + (' (recurring)' if is_recurring else ''),
             'id': str(income.id)
         })
     
@@ -249,7 +272,7 @@ def create_income(request):
 @login_required
 @require_POST
 def create_expense(request):
-    """Create new expense transaction"""
+    """Create new expense transaction (with optional recurring)"""
     user = request.user
     
     try:
@@ -258,6 +281,12 @@ def create_expense(request):
         category = Category.objects.get(id=data['category_id'], user=user)
         amount = Decimal(data['amount'])
         currency = data['currency']
+        
+        # Get user's primary currency safely
+        try:
+            primary_currency = user.profile.primary_currency
+        except Exception:
+            primary_currency = 'PHP'
         
         # Get budget if provided
         budget = None
@@ -268,12 +297,39 @@ def create_expense(request):
         converted_amount = amount
         exchange_rate = None
         
-        if currency != user.profile.primary_currency:
-            conversion = CurrencyService.convert(
-                amount, currency, user.profile.primary_currency
+        if currency != primary_currency:
+            try:
+                conversion = CurrencyService.convert(
+                    amount, currency, primary_currency
+                )
+                converted_amount = conversion['converted_amount']
+                exchange_rate = conversion['rate']
+            except Exception:
+                converted_amount = amount
+        
+        # Check if this is a recurring transaction
+        is_recurring = data.get('is_recurring', False)
+        recurring_transaction = None
+        
+        if is_recurring:
+            from expense_tracker.models import RecurringTransaction
+            
+            recurrence_pattern = data.get('recurrence_pattern', 'monthly')
+            end_date = data.get('recurrence_end_date') or None
+            
+            recurring_transaction = RecurringTransaction.objects.create(
+                user=user,
+                type='expense',
+                category=category,
+                amount=amount,
+                currency=currency,
+                description=data.get('description', ''),
+                recurrence_pattern=recurrence_pattern,
+                start_date=data['transaction_date'],
+                end_date=end_date,
+                is_active=True,
+                budget=budget,
             )
-            converted_amount = conversion['converted_amount']
-            exchange_rate = conversion['rate']
         
         expense = Expense.objects.create(
             user=user,
@@ -286,11 +342,12 @@ def create_expense(request):
             description=data.get('description', ''),
             status=data.get('status', 'pending'),
             budget=budget,
+            recurring_transaction=recurring_transaction,
         )
         
         return JsonResponse({
             'success': True,
-            'message': 'Expense created successfully',
+            'message': 'Expense created successfully' + (' (recurring)' if is_recurring else ''),
             'id': str(expense.id)
         })
     

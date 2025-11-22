@@ -8,26 +8,15 @@
 {% endblock %}
 
 {% block content %}
+<!-- Toast Container -->
+<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>
+
 <!-- Header with Actions -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
     <div>
         <h1 class="h3 fw-bold mb-1">Dashboard</h1>
         <p class="text-muted mb-0">Welcome back, {{ request.user.first_name|default:request.user.username }}!</p>
     </div>
-    <!-- <div class="d-flex gap-2 flex-wrap header-actions justify-content-center">
-        <a href="{% url 'budgets' %}" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1 me-sm-2"></i>
-            <span class="d-none d-sm-inline">Add </span>Budget
-        </a>
-        <a href="{% url 'income' %}" class="btn btn-success">
-            <i class="bi bi-plus-lg me-1 me-sm-2"></i>
-            <span class="d-none d-sm-inline">Add </span>Income
-        </a>
-        <a href="{% url 'expenses' %}" class="btn btn-danger">
-            <i class="bi bi-plus-lg me-1 me-sm-2"></i>
-            <span class="d-none d-sm-inline">Add </span>Expense
-        </a>
-    </div> -->
     <div class="d-flex gap-2 flex-wrap align-items-center justify-content-center">
         <a href="{% url 'budgets' %}" class="btn btn-outline-secondary">
             <i class="bi bi-wallet2 me-2"></i>View Budgets
@@ -239,7 +228,7 @@
 </div>
 
 <!-- Income Modal -->
-<div class="modal fade" id="incomeModal" tabindex="-1">
+<div class="modal fade modal-transaction" id="incomeModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -292,6 +281,38 @@
                         <label for="income-description" class="form-label">Description (optional)</label>
                         <textarea class="form-control" id="income-description" rows="2"></textarea>
                     </div>
+                    
+                    <!-- Recurring Transaction Toggle -->
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="income-is-recurring" 
+                                   onchange="toggleRecurringFields('income', this.checked)">
+                            <label class="form-check-label" for="income-is-recurring">
+                                <i class="bi bi-arrow-repeat me-1"></i>Make this recurring
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Recurring Fields (hidden by default) -->
+                    <div id="income-recurring-fields" style="display: none;">
+                        <div class="alert alert-light border mb-3">
+                            <div class="mb-3">
+                                <label for="income-recurrence-pattern" class="form-label">Repeat</label>
+                                <select class="form-select" id="income-recurrence-pattern">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly" selected>Monthly</option>
+                                    <option value="yearly">Yearly</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-0">
+                                <label for="income-recurrence-end" class="form-label">End Date (optional)</label>
+                                <input type="date" class="form-control" id="income-recurrence-end">
+                                <div class="form-text">Leave empty for no end date</div>
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -303,7 +324,7 @@
 </div>
 
 <!-- Expense Modal -->
-<div class="modal fade" id="expenseModal" tabindex="-1">
+<div class="modal fade modal-transaction" id="expenseModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -366,6 +387,38 @@
                         <label for="expense-description" class="form-label">Description (optional)</label>
                         <textarea class="form-control" id="expense-description" rows="2"></textarea>
                     </div>
+                    
+                    <!-- Recurring Transaction Toggle -->
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="expense-is-recurring" 
+                                   onchange="toggleRecurringFields('expense', this.checked)">
+                            <label class="form-check-label" for="expense-is-recurring">
+                                <i class="bi bi-arrow-repeat me-1"></i>Make this recurring
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Recurring Fields (hidden by default) -->
+                    <div id="expense-recurring-fields" style="display: none;">
+                        <div class="alert alert-light border mb-3">
+                            <div class="mb-3">
+                                <label for="expense-recurrence-pattern" class="form-label">Repeat</label>
+                                <select class="form-select" id="expense-recurrence-pattern">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly" selected>Monthly</option>
+                                    <option value="yearly">Yearly</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-0">
+                                <label for="expense-recurrence-end" class="form-label">End Date (optional)</label>
+                                <input type="date" class="form-control" id="expense-recurrence-end">
+                                <div class="form-text">Leave empty for no end date</div>
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -385,6 +438,7 @@
     const currentMonthData = {{ current_month_trends|safe }};
     const categoryData = {{ category_breakdown|safe }};
     const dashboardCurrency = '{{ summary.currency }}';
+    const csrfToken = '{{ csrf_token }}';
 </script>
 <script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}

@@ -225,6 +225,38 @@
                         <label for="income-description" class="form-label">Description (optional)</label>
                         <textarea class="form-control" id="income-description" rows="2"></textarea>
                     </div>
+                    
+                    <!-- Recurring Transaction Toggle -->
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="income-is-recurring" 
+                                   onchange="toggleRecurringFields('income', this.checked)">
+                            <label class="form-check-label" for="income-is-recurring">
+                                <i class="bi bi-arrow-repeat me-1"></i>Make this recurring
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Recurring Fields (hidden by default) -->
+                    <div id="income-recurring-fields" style="display: none;">
+                        <div class="alert alert-light border mb-3">
+                            <div class="mb-3">
+                                <label for="income-recurrence-pattern" class="form-label">Repeat</label>
+                                <select class="form-select" id="income-recurrence-pattern">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly" selected>Monthly</option>
+                                    <option value="yearly">Yearly</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-0">
+                                <label for="income-recurrence-end" class="form-label">End Date (optional)</label>
+                                <input type="date" class="form-control" id="income-recurrence-end">
+                                <div class="form-text">Leave empty for no end date</div>
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -298,6 +330,38 @@
                     <div class="mb-3">
                         <label for="expense-description" class="form-label">Description (optional)</label>
                         <textarea class="form-control" id="expense-description" rows="2"></textarea>
+                    </div>
+                    
+                    <!-- Recurring Transaction Toggle -->
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="expense-is-recurring" 
+                                   onchange="toggleRecurringFields('expense', this.checked)">
+                            <label class="form-check-label" for="expense-is-recurring">
+                                <i class="bi bi-arrow-repeat me-1"></i>Make this recurring
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Recurring Fields (hidden by default) -->
+                    <div id="expense-recurring-fields" style="display: none;">
+                        <div class="alert alert-light border mb-3">
+                            <div class="mb-3">
+                                <label for="expense-recurrence-pattern" class="form-label">Repeat</label>
+                                <select class="form-select" id="expense-recurrence-pattern">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly" selected>Monthly</option>
+                                    <option value="yearly">Yearly</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-0">
+                                <label for="expense-recurrence-end" class="form-label">End Date (optional)</label>
+                                <input type="date" class="form-control" id="expense-recurrence-end">
+                                <div class="form-text">Leave empty for no end date</div>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>

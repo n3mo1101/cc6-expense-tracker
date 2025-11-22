@@ -3,7 +3,7 @@
 let spendingChart;
 let categoryChart;
 
-// Initialize charts on page load
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     initSpendingChart('yearly');
     initCategoryChart();
@@ -197,6 +197,9 @@ function openCreateIncomeModal() {
     document.getElementById('income-date').value = new Date().toISOString().split('T')[0];
     document.getElementById('income-currency').value = dashboardCurrency;
     
+    // Reset recurring fields
+    toggleRecurringFields('income', false);
+    
     const modal = new bootstrap.Modal(document.getElementById('incomeModal'));
     modal.show();
 }
@@ -208,11 +211,31 @@ function openCreateExpenseModal() {
     document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
     document.getElementById('expense-currency').value = dashboardCurrency;
     
+    // Reset recurring fields
+    toggleRecurringFields('expense', false);
+    
     const modal = new bootstrap.Modal(document.getElementById('expenseModal'));
     modal.show();
 }
 
+/* Toggle Recurring Fields */
+function toggleRecurringFields(type, show) {
+    const recurringFields = document.getElementById(`${type}-recurring-fields`);
+    const recurringCheckbox = document.getElementById(`${type}-is-recurring`);
+    
+    if (recurringFields) {
+        recurringFields.style.display = show ? 'block' : 'none';
+    }
+    if (recurringCheckbox) {
+        recurringCheckbox.checked = show;
+    }
+}
+
+/* Save Income */
 function saveIncome() {
+    const id = document.getElementById('income-id').value;
+    const isRecurring = document.getElementById('income-is-recurring')?.checked || false;
+    
     const data = {
         source_id: document.getElementById('income-source').value,
         amount: document.getElementById('income-amount').value,
@@ -222,7 +245,16 @@ function saveIncome() {
         status: document.getElementById('income-status').value,
     };
     
-    fetch('/api/income/create/', {
+    // Add recurring fields if checked
+    if (isRecurring) {
+        data.is_recurring = true;
+        data.recurrence_pattern = document.getElementById('income-recurrence-pattern')?.value || 'monthly';
+        data.recurrence_end_date = document.getElementById('income-recurrence-end')?.value || null;
+    }
+    
+    const url = id ? `/api/transaction/income/${id}/update/` : '/api/income/create/';
+    
+    fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -233,18 +265,25 @@ function saveIncome() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            window.location.reload();
+            showToast(data.message || 'Income saved successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('incomeModal')).hide();
+            // Reload page to refresh dashboard data
+            setTimeout(() => window.location.reload(), 500);
         } else {
-            alert('Error: ' + data.error);
+            showToast(data.error || 'Error saving income', 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred');
+        showToast('An error occurred', 'error');
     });
 }
 
+/* Save Expense */
 function saveExpense() {
+    const id = document.getElementById('expense-id').value;
+    const isRecurring = document.getElementById('expense-is-recurring')?.checked || false;
+    
     const data = {
         category_id: document.getElementById('expense-category').value,
         amount: document.getElementById('expense-amount').value,
@@ -252,10 +291,19 @@ function saveExpense() {
         transaction_date: document.getElementById('expense-date').value,
         description: document.getElementById('expense-description').value,
         status: document.getElementById('expense-status').value,
-        budget_id: document.getElementById('expense-budget').value || null,
+        budget_id: document.getElementById('expense-budget')?.value || null,
     };
     
-    fetch('/api/expense/create/', {
+    // Add recurring fields if checked
+    if (isRecurring) {
+        data.is_recurring = true;
+        data.recurrence_pattern = document.getElementById('expense-recurrence-pattern')?.value || 'monthly';
+        data.recurrence_end_date = document.getElementById('expense-recurrence-end')?.value || null;
+    }
+    
+    const url = id ? `/api/transaction/expense/${id}/update/` : '/api/expense/create/';
+    
+    fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -266,13 +314,48 @@ function saveExpense() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            window.location.reload();
+            showToast(data.message || 'Expense saved successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('expenseModal')).hide();
+            // Reload page to refresh dashboard data
+            setTimeout(() => window.location.reload(), 500);
         } else {
-            alert('Error: ' + data.error);
+            showToast(data.error || 'Error saving expense', 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred');
+        showToast('An error occurred', 'error');
     });
+}
+
+/* Show Toast Notification */
+function showToast(message, type = 'info') {
+    // Check if toast container exists, create if not
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toastId = 'toast-' + Date.now();
+    const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-primary';
+    
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    const toastEl = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3000 });
+    toast.show();
+    
+    toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
 }
