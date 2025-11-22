@@ -14,7 +14,7 @@ class TransactionsService:
     """Service for handling transaction operations."""
 
     @classmethod
-    def get_combined_transactions(cls, user, filters=None, page=1, per_page=15, for_json=False):
+    def get_combined_transactions(cls, user, filters=None, page=1, per_page=15, for_json=False, sort='date_desc'):
         """
         Get combined income and expense transactions with filtering,
         sorting, and pagination.
@@ -25,6 +25,7 @@ class TransactionsService:
             page: Page number
             per_page: Items per page
             for_json: If True, convert dates to ISO strings for JSON response
+            sort: Sort option ('date_desc', 'date_asc', 'amount_desc', 'amount_asc')
         
         Returns:
             dict with transactions, pagination info, and filter options
@@ -98,8 +99,18 @@ class TransactionsService:
                 'budget_id': str(expense.budget_id) if expense.budget_id else None,
             })
         
-        # Sort by date descending
-        transactions.sort(key=lambda x: x['date'] if isinstance(x['date'], str) else x['date'].isoformat(), reverse=True)
+        # Sort transactions based on sort parameter
+        if sort == 'date_asc':
+            transactions.sort(key=lambda x: x['date'] if isinstance(x['date'], str) else x['date'].isoformat())
+        elif sort == 'date_desc':
+            transactions.sort(key=lambda x: x['date'] if isinstance(x['date'], str) else x['date'].isoformat(), reverse=True)
+        elif sort == 'amount_asc':
+            transactions.sort(key=lambda x: x['amount'])
+        elif sort == 'amount_desc':
+            transactions.sort(key=lambda x: x['amount'], reverse=True)
+        else:
+            # Default to date descending
+            transactions.sort(key=lambda x: x['date'] if isinstance(x['date'], str) else x['date'].isoformat(), reverse=True)
         
         # Pagination
         paginator = Paginator(transactions, per_page)

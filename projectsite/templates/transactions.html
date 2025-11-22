@@ -68,8 +68,24 @@
             <thead>
                 <tr>
                     <th>Transaction</th>
-                    <th>Date</th>
-                    <th>Amount</th>
+                    <th>
+                        Date
+                        <button type="button" class="sort-btn {% if current_sort == 'date_desc' or current_sort == 'date_asc' %}active{% endif %}" 
+                                id="sort-date" 
+                                onclick="toggleSort('date')" 
+                                title="Sort by date">
+                            <i class="bi bi-{% if current_sort == 'date_asc' %}arrow-up{% elif current_sort == 'date_desc' %}arrow-down{% else %}arrow-down-up{% endif %}"></i>
+                        </button>
+                    </th>
+                    <th>
+                        Amount
+                        <button type="button" class="sort-btn {% if current_sort == 'amount_desc' or current_sort == 'amount_asc' %}active{% endif %}" 
+                                id="sort-amount" 
+                                onclick="toggleSort('amount')" 
+                                title="Sort by amount">
+                            <i class="bi bi-{% if current_sort == 'amount_asc' %}arrow-up{% elif current_sort == 'amount_desc' %}arrow-down{% else %}arrow-down-up{% endif %}"></i>
+                        </button>
+                    </th>
                     <th>Status</th>
                 </tr>
             </thead>

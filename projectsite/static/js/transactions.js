@@ -2,11 +2,13 @@
 
 let currentTransaction = null;
 let currentPage = 1;
+let currentSort = 'date_desc';
 let searchTimeout;
 
 document.addEventListener('DOMContentLoaded', function() {
     initFilters();
     initTransactionRows();
+    updateSortIcons();
 });
 
 /* Initialize Filters */
@@ -40,6 +42,42 @@ function initFilters() {
     }
 }
 
+/* Toggle Sort */
+function toggleSort(field) {
+    if (field === 'date') {
+        currentSort = currentSort === 'date_desc' ? 'date_asc' : 'date_desc';
+    } else if (field === 'amount') {
+        currentSort = currentSort === 'amount_desc' ? 'amount_asc' : 'amount_desc';
+    }
+    
+    currentPage = 1;
+    updateSortIcons();
+    loadTransactions();
+}
+
+/* Update Sort Button Icons */
+function updateSortIcons() {
+    const sortDateBtn = document.getElementById('sort-date');
+    const sortAmountBtn = document.getElementById('sort-amount');
+    
+    if (!sortDateBtn || !sortAmountBtn) return;
+    
+    // Reset all buttons
+    sortDateBtn.classList.remove('active');
+    sortAmountBtn.classList.remove('active');
+    sortDateBtn.querySelector('i').className = 'bi bi-arrow-down-up';
+    sortAmountBtn.querySelector('i').className = 'bi bi-arrow-down-up';
+    
+    // Set active button
+    if (currentSort.startsWith('date')) {
+        sortDateBtn.classList.add('active');
+        sortDateBtn.querySelector('i').className = currentSort === 'date_asc' ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+    } else if (currentSort.startsWith('amount')) {
+        sortAmountBtn.classList.add('active');
+        sortAmountBtn.querySelector('i').className = currentSort === 'amount_asc' ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+    }
+}
+
 /* Load Transactions via AJAX */
 function loadTransactions() {
     const search = document.getElementById('searchInput')?.value || '';
@@ -51,6 +89,7 @@ function loadTransactions() {
         type: type,
         status: status,
         page: currentPage,
+        sort: currentSort,
         ajax: '1'
     });
     
@@ -203,6 +242,8 @@ function clearFilters() {
     document.getElementById('typeFilter').value = '';
     document.getElementById('statusFilter').value = '';
     currentPage = 1;
+    currentSort = 'date_desc';
+    updateSortIcons();
     loadTransactions();
 }
 

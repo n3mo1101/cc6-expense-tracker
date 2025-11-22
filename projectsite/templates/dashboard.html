@@ -14,13 +14,27 @@
         <h1 class="h3 fw-bold mb-1">Dashboard</h1>
         <p class="text-muted mb-0">Welcome back, {{ request.user.first_name|default:request.user.username }}!</p>
     </div>
-    <div class="d-flex gap-2">
+    <!-- <div class="d-flex gap-2 flex-wrap header-actions justify-content-center">
+        <a href="{% url 'budgets' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1 me-sm-2"></i>
+            <span class="d-none d-sm-inline">Add </span>Budget
+        </a>
+        <a href="{% url 'income' %}" class="btn btn-success">
+            <i class="bi bi-plus-lg me-1 me-sm-2"></i>
+            <span class="d-none d-sm-inline">Add </span>Income
+        </a>
+        <a href="{% url 'expenses' %}" class="btn btn-danger">
+            <i class="bi bi-plus-lg me-1 me-sm-2"></i>
+            <span class="d-none d-sm-inline">Add </span>Expense
+        </a>
+    </div> -->
+    <div class="d-flex gap-2 flex-wrap align-items-center justify-content-center">
         <a href="{% url 'budgets' %}" class="btn btn-outline-secondary">
             <i class="bi bi-wallet2 me-2"></i>View Budgets
         </a>
         <div class="dropdown">
             <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-plus-lg me-2"></i>Add Transaction
+                <i class="bi bi-plus-lg me-2"></i><span class="d-none d-sm-inline">Add </span>Transaction
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
                 <li>

@@ -267,3 +267,44 @@
         display: none !important;
     }
 }
+
+/* Sort Button Styles */
+
+.sort-btn {
+    background: none;
+    border: none;
+    padding: 0.125rem 0.25rem;
+    margin-left: 0.25rem;
+    color: var(--bs-secondary-color);
+    cursor: pointer;
+    border-radius: 0.25rem;
+    transition: all 0.15s ease;
+    vertical-align: middle;
+}
+
+.sort-btn:hover {
+    color: var(--bs-body-color);
+    background-color: var(--bs-secondary-bg);
+}
+
+.sort-btn.active {
+    color: var(--bs-primary);
+}
+
+.sort-btn.active:hover {
+    color: var(--bs-primary);
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+}
+
+/* Optional: Add subtle animation on sort */
+.sort-btn i {
+    transition: transform 0.2s ease;
+}
+
+.sort-btn.active.asc i {
+    transform: translateY(-1px);
+}
+
+.sort-btn.active.desc i {
+    transform: translateY(1px);
+}

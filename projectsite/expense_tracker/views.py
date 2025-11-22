@@ -96,12 +96,20 @@ def transactions_view(request):
     }
     page = request.GET.get('page', 1)
     
+    # Get sorting parameter (format: 'date_desc', 'date_asc', 'amount_desc', 'amount_asc')
+    sort = request.GET.get('sort', 'date_desc')
+    
+    # Validate sort parameter
+    valid_sorts = ('date_desc', 'date_asc', 'amount_desc', 'amount_asc')
+    if sort not in valid_sorts:
+        sort = 'date_desc'
+    
     # Check if AJAX request
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     
     # Get transactions - pass for_json=True for AJAX requests
     result = TransactionsService.get_combined_transactions(
-        user, filters=filters, page=page, per_page=15, for_json=is_ajax
+        user, filters=filters, page=page, per_page=15, for_json=is_ajax, sort=sort
     )
     
     if is_ajax:
@@ -130,6 +138,7 @@ def transactions_view(request):
         'budgets': budgets,
         'currencies': currencies,
         'primary_currency': user.profile.primary_currency if hasattr(user, 'profile') else 'PHP',
+        'current_sort': sort,
     }
     
     return render(request, 'transactions.html', context)
