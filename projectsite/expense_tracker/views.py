@@ -992,3 +992,145 @@ def get_transaction_detail(request, transaction_type, transaction_id):
         del detail['budget']
     
     return JsonResponse({'success': True, 'data': detail})
+
+
+# ===== PROFILE VIEW =====
+@login_required
+def profile_view(request):
+    """User profile page"""
+    user = request.user
+    from django.db.models import Sum
+    from django.utils import timezone
+    
+    # Get wallet balance
+    today = timezone.now().date()
+    first_of_month = today.replace(day=1)
+    
+    try:
+        currency = user.profile.primary_currency
+    except Exception:
+        currency = 'PHP'
+    
+    # All-time totals
+    total_income = Income.objects.filter(
+        user=user,
+        status='complete'
+    ).aggregate(total=Sum('converted_amount'))['total'] or Decimal('0.00')
+    
+    total_expenses = Expense.objects.filter(
+        user=user,
+        status='complete'
+    ).aggregate(total=Sum('converted_amount'))['total'] or Decimal('0.00')
+    
+    balance = total_income - total_expenses
+    
+    # This month
+    monthly_income = Income.objects.filter(
+        user=user,
+        status='complete',
+        transaction_date__gte=first_of_month,
+        transaction_date__lte=today
+    ).aggregate(total=Sum('converted_amount'))['total'] or Decimal('0.00')
+    
+    monthly_expenses = Expense.objects.filter(
+        user=user,
+        status='complete',
+        transaction_date__gte=first_of_month,
+        transaction_date__lte=today
+    ).aggregate(total=Sum('converted_amount'))['total'] or Decimal('0.00')
+    
+    monthly_balance = monthly_income - monthly_expenses
+    
+    # Quick stats
+    active_budgets = Budget.objects.filter(user=user, status='active').count()
+    total_transactions = Income.objects.filter(user=user).count() + Expense.objects.filter(user=user).count()
+    categories_count = Category.objects.filter(user=user).count()
+    
+    # Get currencies
+    currencies = CurrencyService.get_all_currencies()
+    
+    context = {
+        'wallet': {
+            'balance': balance,
+            'currency': currency,
+            'total_income': total_income,
+            'total_expenses': total_expenses,
+            'monthly_balance': monthly_balance,
+        },
+        'stats': {
+            'active_budgets': active_budgets,
+            'total_transactions': total_transactions,
+            'categories_count': categories_count,
+        },
+        'currencies': currencies,
+    }
+    
+    return render(request, 'profile.html', context)
+
+
+# ===== PROFILE API ENDPOINTS =====
+@login_required
+@require_POST
+def update_profile(request):
+    """Update user profile"""
+    user = request.user
+    
+    try:
+        data = json.loads(request.body)
+        
+        # Update user fields
+        user.first_name = data.get('first_name', user.first_name)
+        user.last_name = data.get('last_name', user.last_name)
+        user.email = data.get('email', user.email)
+        user.save()
+        
+        # Update profile fields
+        if hasattr(user, 'profile'):
+            user.profile.primary_currency = data.get('primary_currency', user.profile.primary_currency)
+            user.profile.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Profile updated successfully'
+        })
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def change_password(request):
+    """Change user password"""
+    from django.contrib.auth import update_session_auth_hash
+    
+    user = request.user
+    
+    try:
+        data = json.loads(request.body)
+        
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        
+        # Verify current password
+        if not user.check_password(current_password):
+            return JsonResponse({'success': False, 'error': 'Current password is incorrect'}, status=400)
+        
+        # Validate new password
+        if len(new_password) < 8:
+            return JsonResponse({'success': False, 'error': 'Password must be at least 8 characters'}, status=400)
+        
+        # Set new password
+        user.set_password(new_password)
+        user.save()
+        
+        # Keep user logged in after password change
+        update_session_auth_hash(request, user)
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Password changed successfully'
+        })
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)

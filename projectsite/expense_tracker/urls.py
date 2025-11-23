@@ -46,4 +46,11 @@ urlpatterns = [
      path('api/income-source/<uuid:source_id>/', views.get_income_source_detail, name='income_source_detail'),
      path('api/income-source/<uuid:source_id>/update/', views.update_income_source, name='update_income_source'),
      path('api/income-source/<uuid:source_id>/delete/', views.delete_income_source, name='delete_income_source'),
+
+     # Profile page
+     path('profile/', views.profile_view, name='profile'),
+
+     # Profile API endpoints
+     path('api/profile/update/', views.update_profile, name='update_profile'),
+     path('api/profile/change-password/', views.change_password, name='change_password'),
 ]
