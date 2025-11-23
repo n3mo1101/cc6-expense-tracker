@@ -126,6 +126,22 @@
             <div class="sidebar-content">
                 <nav class="sidebar-nav">
                     <ul class="nav flex-column">
+                        <!-- Section 1: Profile -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == '#' %}active{% endif %}" href="#">
+                                <i class="bi bi-person-circle"></i>
+                                <span>Profile</span>
+                            </a>
+                        </li>
+                        
+                        <!-- Divider -->
+                        <hr class="sidebar-divider">
+                        
+                        <!-- Heading -->
+                        <div class="sidebar-heading">
+                            Interface
+                        </div>
+                        
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">
                                 <i class="bi bi-speedometer2"></i>
@@ -145,16 +161,14 @@
                             </a>
                         </li>
                         
-                        <li class="nav-item mt-3">
-                            <small class="text-muted px-3 text-uppercase fw-bold">Management</small>
-                        </li>
+                        <!-- Divider -->
+                        <hr class="sidebar-divider">
                         
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == '#' %}active{% endif %}" href="#">
-                                <i class="bi bi-person-circle"></i>
-                                <span>Profile</span>
-                            </a>
-                        </li>
+                        <!-- Heading -->
+                        <div class="sidebar-heading">
+                            Management
+                        </div>
+                        
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'categories' %}active{% endif %}" href="{% url 'categories' %}">
                                 <i class="bi bi-tags"></i>
@@ -173,7 +187,6 @@
                                 <span>Logout</span>
                             </a>
                         </li>
-                        
                     </ul>
                 </nav>
             </div>
