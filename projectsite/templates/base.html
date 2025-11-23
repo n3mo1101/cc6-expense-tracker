@@ -134,14 +134,14 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'transactions' %}active{% endif %}" href="{% url 'transactions' %}">
-                                <i class="bi bi-receipt"></i>
+                                <i class="bi bi-list-task"></i>
                                 <span>Transactions</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}" href="{% url 'analytics' %}">
-                                <i class="bi bi-graph-up"></i>
-                                <span>Analytics</span>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'budgets' %}active{% endif %}" href="{% url 'budgets' %}">
+                                <i class="bi bi-wallet2"></i>
+                                <span>Budgets</span>
                             </a>
                         </li>
                         
@@ -150,21 +150,9 @@
                         </li>
                         
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'budgets' %}active{% endif %}" href="{% url 'budgets' %}">
-                                <i class="bi bi-wallet2"></i>
-                                <span>Budgets</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'income' %}active{% endif %}" href="{% url 'income' %}">
-                                <i class="bi bi-arrow-up-circle"></i>
-                                <span>Income</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'expenses' %}active{% endif %}" href="{% url 'expenses' %}">
-                                <i class="bi bi-arrow-down-circle"></i>
-                                <span>Expenses</span>
+                            <a class="nav-link {% if request.resolver_match.url_name == '#' %}active{% endif %}" href="#">
+                                <i class="bi bi-person-circle"></i>
+                                <span>Profile</span>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -173,6 +161,19 @@
                                 <span>Categories</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'income' %}active{% endif %}" href="{% url 'income' %}">
+                                <i class="bi bi-sliders"></i>
+                                <span>Settings</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'expenses' %}active{% endif %}" href="{% url 'expenses' %}">
+                                <i class="bi bi-escape"></i>
+                                <span>Logout</span>
+                            </a>
+                        </li>
+                        
                     </ul>
                 </nav>
             </div>

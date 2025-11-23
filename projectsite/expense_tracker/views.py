@@ -184,6 +184,7 @@ def budgets_view(request):
     user = request.user
     
     from django.utils import timezone
+    from django.db.models import Sum
     from datetime import timedelta
     
     today = timezone.now().date()
@@ -195,15 +196,24 @@ def budgets_view(request):
     inactive_budgets = []
     
     for budget in budgets:
+        # Calculate spent amount from actual transactions
+        spent_amount = calculate_budget_spent(budget, user)
+        remaining_amount = budget.amount - spent_amount
+        percentage_used = (spent_amount / budget.amount * 100) if budget.amount > 0 else 0
+        is_overspent = spent_amount > budget.amount
+        
         # Calculate additional fields for display
         budget_data = {
             'id': str(budget.id),
             'name': budget.name,
             'amount': budget.amount,
             'currency': budget.currency,
-            'spent_amount': budget.spent_amount,
-            'remaining_amount': budget.remaining_amount,
-            'percentage_used': min(budget.percentage_used, 100),
+            'spent_amount': spent_amount,
+            'remaining_amount': max(remaining_amount, 0),
+            'percentage_used': min(percentage_used, 100),
+            'actual_percentage': percentage_used,
+            'is_overspent': is_overspent,
+            'overspent_amount': abs(remaining_amount) if is_overspent else 0,
             'start_date': budget.start_date,
             'end_date': budget.end_date,
             'recurrence_pattern': budget.recurrence_pattern,
@@ -254,6 +264,7 @@ def budgets_view(request):
     }
     
     return render(request, 'budgets.html', context)
+
 
 
 @login_required
@@ -576,6 +587,37 @@ def get_transaction_detail(request, transaction_type, transaction_id):
     return JsonResponse({'success': True, 'data': detail})
 
 
+# ===== BUDGET HELPER FUNCTIONS =====
+def calculate_budget_spent(budget, user):
+    """Calculate total spent amount for a budget from transactions"""
+    from django.db.models import Sum
+    
+    # Base query for expenses in budget period
+    expenses_query = Expense.objects.filter(
+        user=user,
+        status='complete',
+        transaction_date__gte=budget.start_date,
+    )
+    
+    # Add end date filter if exists
+    if budget.end_date:
+        expenses_query = expenses_query.filter(transaction_date__lte=budget.end_date)
+    
+    # Filter by budget type
+    if budget.budget_type == 'category_filter':
+        # Only count expenses in the filtered categories
+        category_ids = budget.category_filters.values_list('id', flat=True)
+        expenses_query = expenses_query.filter(category_id__in=category_ids)
+    elif budget.budget_type == 'manual':
+        # Only count expenses explicitly linked to this budget
+        expenses_query = expenses_query.filter(budget=budget)
+    
+    # Sum converted amounts (normalized to user's primary currency)
+    total = expenses_query.aggregate(total=Sum('converted_amount'))['total']
+    
+    return total or Decimal('0.00')
+
+
 # ===== BUDGET API ENDPOINTS =====
 @login_required
 def get_budget_detail(request, budget_id):
@@ -585,14 +627,20 @@ def get_budget_detail(request, budget_id):
     try:
         budget = Budget.objects.prefetch_related('category_filters').get(id=budget_id, user=user)
         
+        # Calculate spent from transactions
+        spent_amount = calculate_budget_spent(budget, user)
+        remaining_amount = budget.amount - spent_amount
+        percentage_used = (spent_amount / budget.amount * 100) if budget.amount > 0 else 0
+        
         data = {
             'id': str(budget.id),
             'name': budget.name,
             'amount': str(budget.amount),
             'currency': budget.currency,
-            'spent_amount': str(budget.spent_amount),
-            'remaining_amount': str(budget.remaining_amount),
-            'percentage_used': budget.percentage_used,
+            'spent_amount': str(spent_amount),
+            'remaining_amount': str(max(remaining_amount, Decimal('0.00'))),
+            'percentage_used': percentage_used,
+            'is_overspent': spent_amount > budget.amount,
             'start_date': budget.start_date.isoformat(),
             'end_date': budget.end_date.isoformat() if budget.end_date else None,
             'recurrence_pattern': budget.recurrence_pattern,

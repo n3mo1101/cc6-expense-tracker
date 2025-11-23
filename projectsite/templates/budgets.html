@@ -12,15 +12,15 @@
 <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>
 
 <!-- Header -->
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+<div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1 class="h3 fw-bold mb-1">Budgets</h1>
         <p class="text-muted mb-0">
             <span id="active-count">{{ active_budgets|length }}</span> active budget{{ active_budgets|length|pluralize }}
         </p>
     </div>
-    <button type="button" class="btn btn-primary" onclick="openCreateBudgetModal()">
-        <i class="bi bi-plus-lg me-2"></i>Add Budget
+    <button type="button" class="btn btn-primary flex-shrink-0" onclick="openCreateBudgetModal()">
+        <i class="bi bi-plus-lg me-1 me-sm-2"></i><span class="d-none d-sm-inline">Add </span>Budget
     </button>
 </div>
 
@@ -31,23 +31,35 @@
     </h5>
     
     {% if active_budgets %}
-    <div class="row g-4" id="active-budgets-container">
+    <div class="row g-3" id="active-budgets-container">
         {% for budget in active_budgets %}
-        <div class="col-12 col-lg-6">
-            <div class="budget-card" data-id="{{ budget.id }}" onclick="viewBudget('{{ budget.id }}')">
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="budget-card {% if budget.is_overspent %}overspent{% endif %}" data-id="{{ budget.id }}" onclick="viewBudget('{{ budget.id }}')">
                 <div class="budget-card-header">
                     <div class="budget-info">
                         <h4 class="budget-name">{{ budget.name }}</h4>
                         <div class="budget-amount">
+                            {% if budget.is_overspent %}
+                            <span class="amount-left text-warning">{{ budget.currency }} 0.00</span>
+                            <span class="amount-total">overspent by {{ budget.currency }} {{ budget.overspent_amount|floatformat:2 }}</span>
+                            {% else %}
                             <span class="amount-left">{{ budget.currency }} {{ budget.remaining_amount|floatformat:2 }}</span>
                             <span class="amount-total">left of {{ budget.currency }} {{ budget.amount|floatformat:2 }}</span>
+                            {% endif %}
                         </div>
                     </div>
-                    {% if budget.recurrence_pattern != 'one_time' %}
-                    <div class="budget-recurring-icon" title="Recurring {{ budget.recurrence_pattern }}">
-                        <i class="bi bi-arrow-repeat"></i>
+                    <div class="budget-icons">
+                        {% if budget.is_overspent %}
+                        <div class="budget-overspent-icon" title="Overspent!">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        {% endif %}
+                        {% if budget.recurrence_pattern != 'one_time' %}
+                        <div class="budget-recurring-icon" title="Recurring {{ budget.recurrence_pattern }}">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
                 
                 <div class="budget-card-body">
@@ -58,15 +70,21 @@
                             <span>{{ budget.end_date|date:"M j" }}</span>
                         </div>
                         <div class="budget-progress-bar">
-                            <div class="progress-fill {% if budget.percentage_used > 90 %}danger{% elif budget.percentage_used > 70 %}warning{% endif %}" 
+                            <div class="progress-fill {% if budget.is_overspent %}danger{% elif budget.percentage_used > 90 %}danger{% elif budget.percentage_used > 70 %}warning{% endif %}" 
                                  style="width: {{ budget.percentage_used }}%"></div>
                             <div class="progress-today-line" style="left: {{ budget.time_progress }}%"></div>
                         </div>
-                        <div class="progress-percentage">{{ budget.percentage_used|floatformat:0 }}%</div>
+                        <div class="progress-percentage">{{ budget.actual_percentage|floatformat:0 }}%</div>
                     </div>
                     
                     <div class="budget-daily-info">
+                        {% if budget.is_overspent %}
+                        <span class="text-warning"><i class="bi bi-exclamation-circle me-1"></i>Budget exceeded</span>
+                        {% elif budget.days_remaining > 0 %}
                         You can spend <strong>{{ budget.currency }} {{ budget.daily_allowance|floatformat:2 }}</strong>/day for <strong>{{ budget.days_remaining }}</strong> more days
+                        {% else %}
+                        Budget period ended
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -92,9 +110,9 @@
         <i class="bi bi-archive text-secondary me-2"></i>Inactive Budgets
     </h5>
     
-    <div class="row g-4" id="inactive-budgets-container">
+    <div class="row g-3" id="inactive-budgets-container">
         {% for budget in inactive_budgets %}
-        <div class="col-12 col-lg-6">
+        <div class="col-12 col-sm-6 col-xl-4">
             <div class="budget-card inactive" data-id="{{ budget.id }}" onclick="viewBudget('{{ budget.id }}')">
                 <div class="budget-card-header">
                     <div class="budget-info">
@@ -104,11 +122,13 @@
                             <span class="amount-total">left of {{ budget.currency }} {{ budget.amount|floatformat:2 }}</span>
                         </div>
                     </div>
-                    {% if budget.recurrence_pattern != 'one_time' %}
-                    <div class="budget-recurring-icon" title="Recurring {{ budget.recurrence_pattern }}">
-                        <i class="bi bi-arrow-repeat"></i>
+                    <div class="budget-icons">
+                        {% if budget.recurrence_pattern != 'one_time' %}
+                        <div class="budget-recurring-icon" title="Recurring {{ budget.recurrence_pattern }}">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
                 
                 <div class="budget-card-body">
@@ -120,7 +140,7 @@
                         <div class="budget-progress-bar">
                             <div class="progress-fill" style="width: {{ budget.percentage_used }}%"></div>
                         </div>
-                        <div class="progress-percentage">{{ budget.percentage_used|floatformat:0 }}%</div>
+                        <div class="progress-percentage">{{ budget.actual_percentage|floatformat:0 }}%</div>
                     </div>
                     
                     <div class="budget-status-info">
