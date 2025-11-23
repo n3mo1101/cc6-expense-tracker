@@ -34,4 +34,16 @@ urlpatterns = [
      path('api/budget/<uuid:budget_id>/update/', views.update_budget, name='update_budget'),
      path('api/budget/<uuid:budget_id>/toggle-status/', views.toggle_budget_status, name='toggle_budget_status'),
      path('api/budget/<uuid:budget_id>/delete/', views.delete_budget, name='delete_budget'),
+
+     # Category API endpoints
+     path('api/category/create/', views.create_category, name='create_category'),
+     path('api/category/<uuid:category_id>/', views.get_category_detail, name='category_detail'),
+     path('api/category/<uuid:category_id>/update/', views.update_category, name='update_category'),
+     path('api/category/<uuid:category_id>/delete/', views.delete_category, name='delete_category'),
+
+     # Income Source API endpoints
+     path('api/income-source/create/', views.create_income_source, name='create_income_source'),
+     path('api/income-source/<uuid:source_id>/', views.get_income_source_detail, name='income_source_detail'),
+     path('api/income-source/<uuid:source_id>/update/', views.update_income_source, name='update_income_source'),
+     path('api/income-source/<uuid:source_id>/delete/', views.delete_income_source, name='delete_income_source'),
 ]
