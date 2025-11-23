@@ -359,3 +359,163 @@ function showToast(message, type = 'info') {
     
     toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
 }
+
+/* ===== TRANSACTION INTERACTION FUNCTIONS ===== */
+
+let currentDashboardTransaction = null;
+
+/* View Transaction from Dashboard */
+function viewDashboardTransaction(type, id) {
+    fetch(`/api/transaction/${type}/${id}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentDashboardTransaction = data.data;
+                showTransactionDetailModal(data.data);
+            } else {
+                showToast('Error loading transaction', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error loading transaction', 'error');
+        });
+}
+
+/* Show Transaction Detail Modal */
+function showTransactionDetailModal(transaction) {
+    const modal = document.getElementById('transactionDetailModal');
+    
+    document.getElementById('detail-type').textContent = transaction.type === 'income' ? 'Income' : 'Expense';
+    document.getElementById('detail-type').className = `badge ${transaction.type === 'income' ? 'bg-success' : 'bg-danger'}`;
+    document.getElementById('detail-name').textContent = transaction.name;
+    document.getElementById('detail-amount').textContent = `${transaction.currency} ${parseFloat(transaction.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    document.getElementById('detail-amount').className = `detail-value ${transaction.type}`;
+    
+    if (transaction.converted_amount && transaction.currency !== dashboardCurrency) {
+        document.getElementById('detail-converted').textContent = `${dashboardCurrency} ${parseFloat(transaction.converted_amount).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        document.getElementById('detail-converted-row').style.display = 'flex';
+    } else {
+        document.getElementById('detail-converted-row').style.display = 'none';
+    }
+    
+    document.getElementById('detail-date').textContent = new Date(transaction.date).toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric'
+    });
+    
+    document.getElementById('detail-status').textContent = transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1);
+    document.getElementById('detail-status').className = `status-badge ${transaction.status}`;
+    
+    document.getElementById('detail-description').textContent = transaction.description || '-';
+    
+    const completeBtn = document.getElementById('btn-mark-complete');
+    if (transaction.status === 'pending') {
+        completeBtn.style.display = 'inline-block';
+    } else {
+        completeBtn.style.display = 'none';
+    }
+    
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+/* Open Edit Transaction Modal */
+function openEditTransactionModal() {
+    if (!currentDashboardTransaction) return;
+    
+    bootstrap.Modal.getInstance(document.getElementById('transactionDetailModal')).hide();
+    
+    if (currentDashboardTransaction.type === 'income') {
+        document.getElementById('income-id').value = currentDashboardTransaction.id;
+        document.getElementById('income-source').value = currentDashboardTransaction.source_id;
+        document.getElementById('income-amount').value = currentDashboardTransaction.amount;
+        document.getElementById('income-currency').value = currentDashboardTransaction.currency;
+        document.getElementById('income-date').value = currentDashboardTransaction.date;
+        document.getElementById('income-description').value = currentDashboardTransaction.description || '';
+        document.getElementById('income-status').value = currentDashboardTransaction.status;
+        document.getElementById('incomeModalLabel').textContent = 'Edit Income';
+        
+        toggleRecurringFields('income', false);
+        
+        const modal = new bootstrap.Modal(document.getElementById('incomeModal'));
+        modal.show();
+    } else {
+        document.getElementById('expense-id').value = currentDashboardTransaction.id;
+        document.getElementById('expense-category').value = currentDashboardTransaction.category_id;
+        document.getElementById('expense-amount').value = currentDashboardTransaction.amount;
+        document.getElementById('expense-currency').value = currentDashboardTransaction.currency;
+        document.getElementById('expense-date').value = currentDashboardTransaction.date;
+        document.getElementById('expense-description').value = currentDashboardTransaction.description || '';
+        document.getElementById('expense-status').value = currentDashboardTransaction.status;
+        document.getElementById('expense-budget').value = currentDashboardTransaction.budget_id || '';
+        document.getElementById('expenseModalLabel').textContent = 'Edit Expense';
+        
+        toggleRecurringFields('expense', false);
+        
+        const modal = new bootstrap.Modal(document.getElementById('expenseModal'));
+        modal.show();
+    }
+}
+
+/* Mark Transaction Complete */
+function markTransactionComplete() {
+    if (!currentDashboardTransaction) return;
+    
+    fetch(`/api/transaction/${currentDashboardTransaction.type}/${currentDashboardTransaction.id}/complete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message || 'Transaction marked as complete', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('transactionDetailModal')).hide();
+            setTimeout(() => window.location.reload(), 500);
+        } else {
+            showToast(data.error || 'Error updating transaction', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred', 'error');
+    });
+}
+
+/* Open Delete Transaction Modal */
+function openDeleteTransactionModal() {
+    if (!currentDashboardTransaction) return;
+    
+    bootstrap.Modal.getInstance(document.getElementById('transactionDetailModal')).hide();
+    document.getElementById('delete-transaction-name').textContent = currentDashboardTransaction.name;
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteTransactionModal'));
+    modal.show();
+}
+
+/* Confirm Delete Transaction */
+function confirmDeleteTransaction() {
+    if (!currentDashboardTransaction) return;
+    
+    fetch(`/api/transaction/${currentDashboardTransaction.type}/${currentDashboardTransaction.id}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message || 'Transaction deleted', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('deleteTransactionModal')).hide();
+            setTimeout(() => window.location.reload(), 500);
+        } else {
+            showToast(data.error || 'Error deleting transaction', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred', 'error');
+    });
+}

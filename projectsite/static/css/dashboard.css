@@ -287,3 +287,86 @@
         font-size: 0.75rem;
     }
 }
+
+/* Mobile Responsive - Stats Cards (stack on small screens) */
+@media (max-width: 575.98px) {
+    /* Make stats cards full width and stack */
+    .stats-card .card-body {
+        padding: 0.875rem !important;
+    }
+    
+    .stats-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .stats-card h4 {
+        font-size: 1.125rem;
+    }
+    
+    .stats-card p {
+        font-size: 0.75rem !important;
+    }
+    
+    .stats-card small {
+        font-size: 0.7rem !important;
+    }
+    
+    /* Chart adjustments */
+    .chart-container {
+        height: 220px;
+    }
+    
+    .chart-toggle .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Transaction Detail Modal */
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
+}
+
+.detail-value {
+    font-weight: 600;
+    color: var(--bs-body-color);
+}
+
+.detail-value.income {
+    color: var(--bs-success);
+}
+
+.detail-value.expense {
+    color: var(--bs-danger);
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 50px;
+    font-weight: 500;
+}
+
+.status-badge.pending {
+    background-color: rgba(255, 193, 7, 0.15);
+    color: #997404;
+}
+
+.status-badge.complete {
+    background-color: rgba(25, 135, 84, 0.15);
+    color: var(--bs-success);
+}

@@ -324,6 +324,7 @@ class DashboardService:
         
         for income in incomes:
             transactions.append({
+                'id': str(income.id),
                 'type': 'income',
                 'name': income.source.name if income.source else 'Unknown',
                 'amount': safe_decimal(income.amount),
@@ -337,6 +338,7 @@ class DashboardService:
         
         for expense in expenses:
             transactions.append({
+                'id': str(expense.id),
                 'type': 'expense',
                 'name': expense.category.name if expense.category else 'Unknown',
                 'amount': safe_decimal(expense.amount),

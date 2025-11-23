@@ -198,7 +198,7 @@
     <div class="card-body p-0">
         <ul class="transaction-list">
             {% for transaction in recent_transactions %}
-            <li class="transaction-item">
+            <li class="transaction-item" style="cursor: pointer;" onclick="viewDashboardTransaction('{{ transaction.type }}', '{{ transaction.id }}')">
                 <div class="transaction-icon {% if transaction.type == 'income' %}income{% else %}expense{% endif %}">
                     {% if transaction.type == 'income' %}
                     <i class="bi bi-arrow-up-short"></i>
@@ -218,7 +218,7 @@
             <li class="empty-state">
                 <i class="bi bi-receipt"></i>
                 <p>No transactions yet</p>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transactionModal">
+                <button type="button" class="btn btn-primary" onclick="openCreateIncomeModal()">
                     Add your first transaction
                 </button>
             </li>
@@ -226,6 +226,84 @@
         </ul>
     </div>
 </div>
+
+<!-- Transaction Detail Modal -->
+<div class="modal fade" id="transactionDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Transaction Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3 text-center">
+                    <span id="detail-type" class="badge bg-success mb-2">Income</span>
+                    <h4 id="detail-name" class="mb-0">Transaction Name</h4>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Amount</span>
+                    <span id="detail-amount" class="detail-value income">$0.00</span>
+                </div>
+                
+                <div class="detail-row" id="detail-converted-row" style="display: none;">
+                    <span class="detail-label">Converted Amount</span>
+                    <span id="detail-converted" class="detail-value">$0.00</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Date</span>
+                    <span id="detail-date" class="detail-value">-</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Status</span>
+                    <span id="detail-status" class="status-badge complete">Complete</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Description</span>
+                    <span id="detail-description" class="detail-value">-</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" id="btn-mark-complete" onclick="markTransactionComplete()">
+                    <i class="bi bi-check-circle me-1"></i>Mark Complete
+                </button>
+                <button type="button" class="btn btn-primary" onclick="openEditTransactionModal()">
+                    <i class="bi bi-pencil me-1"></i>Edit
+                </button>
+                <button type="button" class="btn btn-danger" onclick="openDeleteTransactionModal()">
+                    <i class="bi bi-trash me-1"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Transaction Confirmation Modal -->
+<div class="modal fade" id="deleteTransactionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Transaction</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="delete-transaction-name">this transaction</strong>?</p>
+                <p class="text-muted mb-0">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteTransaction()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Expense Modal -->
+<div class="modal fade modal-transaction" id="expenseModal" tabindex="-1">
+
 
 <!-- Income Modal -->
 <div class="modal fade modal-transaction" id="incomeModal" tabindex="-1">
