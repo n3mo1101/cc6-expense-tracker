@@ -16,6 +16,9 @@
     letter-spacing: 0.05em;
     color: var(--bs-secondary-color);
 }
+.admin-wrapper.sidebar-collapsed .admin-sidebar .sidebar-nav .sidebar-heading span {
+    display: none;
+}
 .nav-divider {
     height: 0;
     margin: 1rem 1rem;
