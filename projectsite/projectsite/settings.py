@@ -40,6 +40,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "expense_tracker", # App for expense tracking
+    
+    "widget_tweaks", # Third-party app for form customization
+
 ]
 
 MIDDLEWARE = [
@@ -130,5 +133,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 # Authentication
-LOGIN_REDIRECT_URL = '/'  # Redirect to home after login
-LOGOUT_REDIRECT_URL = '/'  # Redirect to home after logout
+LOGIN_URL = '/accounts/login/' # where @login_required will send users
+LOGIN_REDIRECT_URL = '/' # where to go after successful login
+LOGOUT_REDIRECT_URL = '/accounts/login/' # after logout, go back to login
