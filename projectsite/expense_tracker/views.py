@@ -23,32 +23,13 @@ def landing_view(request):
     return render(request, 'landing-page.html')
 
 # ===== AUTHENTICATION VIEWS =====
-def login_view(request):
-    """Handle user login"""
-    if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
-            login(request, user)
-            return redirect('dashboard')
-        else:
-            messages.error(request, 'Invalid username or password.')
-    
-    return render(request, 'account/login.html')
-
-
-def signup_view(request):
-    """Handle user register"""
-    return render(request, 'account/signup.html')
-
+"""Allauth handles login and registration views"""
 
 def logout_view(request):
     """Handle user logout"""
     logout(request)
     messages.success(request, 'You have been logged out successfully.')
-    return redirect('login')
+    return redirect('account_login')
 
 
 # ===== DASHBOARD/HOME VIEW =====

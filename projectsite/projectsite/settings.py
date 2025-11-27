@@ -43,8 +43,14 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "expense_tracker", # App for expense tracking
-    
     "widget_tweaks", # Third-party app for form customization
+
+    # Allauth for authentication
+    "django.contrib.sites",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
 ]
 
 MIDDLEWARE = [
@@ -55,6 +61,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "projectsite.urls"
@@ -134,14 +141,29 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Site ID
+SITE_ID = 1
 
-# Authentication
-LOGIN_URL = '/accounts/login/' # where @login_required will send users
-LOGIN_REDIRECT_URL = '/' # where to go after successful login
-LOGOUT_REDIRECT_URL = '/accounts/login/' # after logout, go back to login
+# Authentication backends
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
 
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'
-ACCOUNT_LOGOUT_ON_GET = True
+# Allauth settings (UPDATED FORMAT - No warnings!)
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}  # Allow both
 
-ACCOUNT_LOGIN_METHODS = ['username', 'email']
-ACCOUNT_SIGNUP_FIELDS = ['username', 'email', 'password1', 'password2']
+ACCOUNT_SIGNUP_FIELDS = [
+    'email*',      # Required (asterisk = required)
+    'username*',   # Required
+    'password1*',  # Required
+    'password2*',  # Required (confirmation)
+]
+
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_UNIQUE_EMAIL = True
+LOGIN_REDIRECT_URL = '/dashboard/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+# Email (for development)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

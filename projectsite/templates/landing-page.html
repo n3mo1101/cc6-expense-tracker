@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,12 +8,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="/static/css/landing-page.css" rel="stylesheet">
+    <link href="{% static 'css/landing-page.css' %}" rel="stylesheet">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="#home"><img src="/static/img/logo.png" style="max-width:120px;"></i>MoneyLens</a>
+            <a class="navbar-brand" href="#home"><img src="{% static 'img/logo.png' %}" style="max-width:120px;"></i>MoneyLens</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -29,8 +30,8 @@
                     </li>
                 </ul>
                 <div class="d-flex">
-                    <a href="{% url 'login' %}" class="btn btn-outline-primary me-2">Log In</a>
-                    <a href="{% url 'signup' %}" class="btn btn-primary">Sign Up</a>
+                    <a href="{% url 'account_login' %}" class="btn btn-outline-primary me-2">Log In</a>
+                    <a href="{% url 'account_signup' %}" class="btn btn-primary">Sign Up</a>
                 </div>
             </div>
         </div>
@@ -50,7 +51,7 @@
                     <div class="col-lg-6">
                         <div class="img-placeholder">
                             <div class="text-center">
-                                <img src="/static/img/logo.png" alt="MoneyLens Logo" class="mb-3" style="max-width:120px;">
+                                <img src="{% static 'img/logo.png' %}" alt="MoneyLens Logo" class="mb-3" style="max-width:120px;">
                                 <h3>Expense Tracking</h3>
                         <p class="">Visualize your financial data</p>
                         </div>

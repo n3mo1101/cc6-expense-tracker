@@ -97,7 +97,7 @@
                                     data-bs-toggle="dropdown" 
                                     aria-expanded="false">
                                 {% if user.profile.avatar %}
-                                    <img src="{{ user.profile.avatar.url }}" 
+                                    <img src="{{ user.profile.avatar }}" 
                                          alt="User Avatar" 
                                          width="24" 
                                          height="24" 
@@ -146,7 +146,7 @@
                         </div>
                         
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
                                 <i class="bi bi-speedometer2"></i>
                                 <span>Dashboard</span>
                             </a>

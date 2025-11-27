@@ -6,8 +6,6 @@ urlpatterns = [
     path('', views.landing_view, name='home'),
 
     # Authentication
-    path('accounts/login/', views.login_view, name='login'),
-    path('signup/', views.signup_view, name='signup'),
     path('logout/', views.logout_view, name='logout'),
 
     # Main pages

@@ -1,79 +1,124 @@
 {% load static %}
+{% load socialaccount %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'css/signup.css' %}">
-    <title>Create Account | Your App</title>
+    <title>Create Account | MoneyLens</title>
 </head>
 <body>
     <div class="signin-container">
         <div class="signin-header">
             <h2>Create Account</h2>
-            <p>Sign up to get started with our service</p>
+            <p>Sign up to get started with MoneyLens</p>
         </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="error-message">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if form.non_field_errors %}
+            <div class="error-message">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
         
-        <form id="signup-form">
+        <form method="post" action="{% url 'account_signup' %}">
+            {% csrf_token %}
+            
             <div class="form-group">
-                <label for="fullname">Full Name</label>
-                <input type="text" id="fullname" name="fullname" placeholder="Enter your full name" required>
+                <label for="id_username">Username</label>
+                <input type="text" 
+                       id="id_username" 
+                       name="username" 
+                       placeholder="Choose a username" 
+                       value="{{ form.username.value|default:'' }}"
+                       required>
+                {% if form.username.errors %}
+                    <div class="error-message">
+                        {% for error in form.username.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
             
             <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                <label for="id_email">Email Address</label>
+                <input type="email" 
+                       id="id_email" 
+                       name="email" 
+                       placeholder="Enter your email" 
+                       value="{{ form.email.value|default:'' }}"
+                       required>
+                {% if form.email.errors %}
+                    <div class="error-message">
+                        {% for error in form.email.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
             
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Create a password" required>
+                <label for="id_password1">Password</label>
+                <input type="password" 
+                       id="id_password1" 
+                       name="password1" 
+                       placeholder="Create a password (min 8 characters)" 
+                       required>
+                {% if form.password1.errors %}
+                    <div class="error-message">
+                        {% for error in form.password1.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
             
             <div class="form-group">
-                <label for="confirm-password">Confirm Password</label>
-                <input type="password" id="confirm-password" name="confirm-password" placeholder="Confirm your password" required>
+                <label for="id_password2">Confirm Password</label>
+                <input type="password" 
+                       id="id_password2" 
+                       name="password2" 
+                       placeholder="Confirm your password" 
+                       required>
+                {% if form.password2.errors %}
+                    <div class="error-message">
+                        {% for error in form.password2.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
             
             <button type="submit" class="signin-btn">Create Account</button>
         </form>
+
+        <!-- Social Signup Section -->
+        <div class="social-login-section">
+            <div class="divider">
+                <span>or sign up with</span>
+            </div>
+            
+            <!-- Google Login Button -->
+            <a href="#" class="social-btn google-btn">
+                <img src="{% static 'img/google.png' %}" class="icon" alt="">
+                <span>Sign in with Google</span>
+            </a>
+        </div>
         
         <div class="register-section">
-            <p>Already have an account? <a href="login.html" class="register-link">Sign in here</a></p>
+            <p>Already have an account? <a href="{% url 'account_login' %}" class="register-link">Sign in here</a></p>
         </div>
     </div>
-
-    <script>
-        document.getElementById('signup-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const fullname = document.getElementById('fullname').value;
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-            
-            // Basic validation
-            if (password !== confirmPassword) {
-                alert('Passwords do not match!');
-                return;
-            }
-            
-            if (password.length < 6) {
-                alert('Password must be at least 6 characters long!');
-                return;
-            }
-            
-            // Here you would typically send the data to your server
-            console.log('Sign up attempt:', { fullname, email, password });
-            
-            // For demo purposes - show success message
-            alert('Account created successfully! (This is a demo)');
-            
-            // Redirect to login page
-            setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 1000);
-        });
-    </script>
 </body>
 </html>
