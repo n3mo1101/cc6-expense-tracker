@@ -1,8 +1,11 @@
 {% load static %}
 {% load socialaccount %}
+{% load pwa %}
 <!DOCTYPE html>
 <html>
 <head>
+    {% progressive_web_app_meta %}
+    <link rel="icon" type="image/x-icon" href="{% static 'img/logo-256.png' %}">
     <title>Login - MoneyLens</title>
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
