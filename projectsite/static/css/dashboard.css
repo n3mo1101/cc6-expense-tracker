@@ -8,7 +8,7 @@
 }
 
 [data-bs-theme="dark"] .wallet-card {
-    background: linear-gradient(135deg, #4cc9f0 0%, #764ba2 100%);;
+    background: linear-gradient(135deg, #4c99f0 0%, #764ba2 100%);
 }
 
 .progress-wallet {
@@ -373,4 +373,50 @@
 .status-badge.complete {
     background-color: rgba(25, 135, 84, 0.15);
     color: var(--bs-success);
+}
+.category-scroll-container {
+    max-height: 330px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+/* Custom scrollbar styling */
+.category-scroll-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.category-scroll-container::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+}
+
+.category-scroll-container::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.category-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: transparent;
+}
+
+.category-scroll-container::-webkit-scrollbar-thumb:active {
+    background: transparent;
+}
+
+/* Firefox scrollbar styling */
+.category-scroll-container {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(75, 73, 73, 0.219) transparent;
+}
+
+/* For very small screens */
+@media (max-width: 576px) {
+    .category-scroll-container {
+        max-height: 280px;
+    }
+    
+    .category-scroll-container::-webkit-scrollbar {
+        width: 4px;
+    }
 }

@@ -13,9 +13,12 @@
 .brand-header {
     font-weight: 700;
     font-size: 1.4rem;
-    color: var(--primary);
+    color: linear-gradient(to right, var(--primary-light), var(--primary));
     padding-top: 0.5rem;
-    /* margin-left: -0.5rem; */
+    color: var(--dark-text);
+    background: linear-gradient(to right, var(--primary-light), var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 [data-bs-theme="dark"] .brand-header {
