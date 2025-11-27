@@ -225,218 +225,196 @@ class Command(BaseCommand):
             )
 
     def create_incomes(self, user, income_sources):
-        """Create 10 income transactions per user (6 in current month, 4 in past months)."""
+        """Create 10 income transactions per user distributed across 12 months with gradual increase."""
         today = timezone.now().date()
+        current_month_start = today.replace(day=1)
         
-        # Create 6 incomes in the current month
-        for _ in range(6):
-            currency = random.choice(CURRENCIES)
-            source = random.choice(income_sources)
-            
-            # Amount ranges based on source
-            if source.name == 'Salary':
-                amount = Decimal(random.randint(40000, 60000))
-            elif source.name == 'Freelance':
-                amount = Decimal(random.randint(5000, 20000))
-            elif source.name == 'Business':
-                amount = Decimal(random.randint(10000, 50000))
-            elif source.name == 'Investment':
-                amount = Decimal(random.randint(1000, 10000))
-            elif source.name == 'Gifts':
-                amount = Decimal(random.randint(500, 5000))
-            else:  # Other sources
-                amount = Decimal(random.randint(1000, 8000))
-            
-            # Adjust for currency
-            if currency != 'PHP':
-                amount = Decimal(random.randint(100, 2000))
-            
-            # Random date in current month
-            days_in_month = today.day
-            days_ago = random.randint(0, days_in_month - 1)
-            transaction_date = today - timedelta(days=days_ago)
-            
-            # 90% complete, 10% pending
-            status = 'complete' if random.random() < 0.9 else 'pending'
-            
-            # Calculate converted amount
-            exchange_rate = EXCHANGE_RATES.get(currency, Decimal('1.00'))
-            converted_amount = amount * exchange_rate if currency != 'PHP' else amount
-            
-            Income.objects.create(
-                user=user,
-                source=source,
-                amount=amount,
-                currency=currency,
-                exchange_rate=exchange_rate if currency != 'PHP' else None,
-                converted_amount=converted_amount,
-                transaction_date=transaction_date,
-                description=fake.sentence(nb_words=4),
-                status=status
-            )
+        # Distribution: gradually increasing toward current month
+        # Months 12-9 ago: 0-1 income each
+        # Months 8-5 ago: 1 income each
+        # Months 4-2 ago: 1-2 incomes each
+        # Last month: 2 incomes
+        # Current month: 3 incomes
         
-        # Create 4 incomes in past months
-        for _ in range(4):
-            currency = random.choice(CURRENCIES)
-            source = random.choice(income_sources)
-            
-            # Amount ranges based on source
-            if source.name == 'Salary':
-                amount = Decimal(random.randint(40000, 60000))
-            elif source.name == 'Freelance':
-                amount = Decimal(random.randint(5000, 20000))
-            elif source.name == 'Business':
-                amount = Decimal(random.randint(10000, 50000))
-            elif source.name == 'Investment':
-                amount = Decimal(random.randint(1000, 10000))
-            elif source.name == 'Gifts':
-                amount = Decimal(random.randint(500, 5000))
-            else:  # Other sources
-                amount = Decimal(random.randint(1000, 8000))
-            
-            # Adjust for currency
-            if currency != 'PHP':
-                amount = Decimal(random.randint(100, 2000))
-            
-            # Random date in past 11 months (30-365 days ago)
-            days_ago = random.randint(30, 365)
-            transaction_date = today - timedelta(days=days_ago)
-            
-            # 90% complete, 10% pending
-            status = 'complete' if random.random() < 0.9 else 'pending'
-            
-            # Calculate converted amount
-            exchange_rate = EXCHANGE_RATES.get(currency, Decimal('1.00'))
-            converted_amount = amount * exchange_rate if currency != 'PHP' else amount
-            
-            Income.objects.create(
-                user=user,
-                source=source,
-                amount=amount,
-                currency=currency,
-                exchange_rate=exchange_rate if currency != 'PHP' else None,
-                converted_amount=converted_amount,
-                transaction_date=transaction_date,
-                description=fake.sentence(nb_words=4),
-                status=status
-            )
+        monthly_distribution = [
+            (11, 0),  # 11 months ago
+            (10, 1),  # 10 months ago
+            (9, 0),   # 9 months ago
+            (8, 1),   # 8 months ago
+            (7, 1),   # 7 months ago
+            (6, 1),   # 6 months ago
+            (5, 1),   # 5 months ago
+            (4, 2),   # 4 months ago
+            (3, 1),   # 3 months ago
+            (2, 2),   # 2 months ago
+            (1, 2),   # last month
+            (0, 3),   # current month
+        ]
+        
+        for months_ago, count in monthly_distribution:
+            for _ in range(count):
+                currency = random.choice(CURRENCIES)
+                source = random.choice(income_sources)
+                
+                # Amount ranges based on source
+                if source.name == 'Salary':
+                    amount = Decimal(random.randint(40000, 60000))
+                elif source.name == 'Freelance':
+                    amount = Decimal(random.randint(5000, 20000))
+                elif source.name == 'Business':
+                    amount = Decimal(random.randint(10000, 50000))
+                elif source.name == 'Investment':
+                    amount = Decimal(random.randint(1000, 10000))
+                elif source.name == 'Gifts':
+                    amount = Decimal(random.randint(500, 5000))
+                else:  # Other sources
+                    amount = Decimal(random.randint(1000, 8000))
+                
+                # Adjust for currency
+                if currency != 'PHP':
+                    amount = Decimal(random.randint(100, 2000))
+                
+                # Calculate transaction date for the target month
+                if months_ago == 0:
+                    # Current month: random day from 1st to today
+                    days_in_range = today.day
+                    random_day = random.randint(1, days_in_range)
+                    transaction_date = today.replace(day=random_day)
+                else:
+                    # Past months: random day in that month
+                    target_month = current_month_start - timedelta(days=months_ago * 30)
+                    # Get last day of target month
+                    if target_month.month == 12:
+                        next_month = target_month.replace(year=target_month.year + 1, month=1, day=1)
+                    else:
+                        next_month = target_month.replace(month=target_month.month + 1, day=1)
+                    last_day = (next_month - timedelta(days=1)).day
+                    random_day = random.randint(1, last_day)
+                    transaction_date = target_month.replace(day=random_day)
+                
+                # 95% complete, 5% pending (pending only for current month)
+                if months_ago == 0:
+                    status = 'complete' if random.random() < 0.9 else 'pending'
+                else:
+                    status = 'complete'
+                
+                # Calculate converted amount
+                exchange_rate = EXCHANGE_RATES.get(currency, Decimal('1.00'))
+                converted_amount = amount * exchange_rate if currency != 'PHP' else amount
+                
+                Income.objects.create(
+                    user=user,
+                    source=source,
+                    amount=amount,
+                    currency=currency,
+                    exchange_rate=exchange_rate if currency != 'PHP' else None,
+                    converted_amount=converted_amount,
+                    transaction_date=transaction_date,
+                    description=fake.sentence(nb_words=4),
+                    status=status
+                )
 
     def create_expenses(self, user, categories):
-        """Create 25 expense transactions per user (18 in current month, 7 in past months)."""
+        """Create 25 expense transactions per user distributed across 12 months with gradual increase."""
         today = timezone.now().date()
+        current_month_start = today.replace(day=1)
         
         # Get budgets for linking
         budgets = list(Budget.objects.filter(user=user))
         
-        # Create 18 expenses in the current month
-        for _ in range(18):
-            currency = random.choice(CURRENCIES)
-            category = random.choice(categories)
-            
-            # Amount ranges based on category (using predefined category names)
-            amount_ranges = {
-                'Food & Dining': (100, 2000),
-                'Groceries': (500, 3000),
-                'Transportation': (50, 1500),
-                'Bills & Utilities': (500, 5000),
-                'Entertainment': (200, 3000),
-                'Shopping': (500, 10000),
-                'Healthcare': (300, 5000),
-                'Education': (1000, 15000),
-                'Games & Hobbies': (200, 4000),
-                'Other Expenses': (100, 5000),
-            }
-            min_amt, max_amt = amount_ranges.get(category.name, (100, 5000))
-            amount = Decimal(random.randint(min_amt, max_amt))
-            
-            # Adjust for currency
-            if currency != 'PHP':
-                amount = Decimal(random.randint(10, 200))
-            
-            # Random date in current month
-            days_in_month = today.day
-            days_ago = random.randint(0, days_in_month - 1)
-            transaction_date = today - timedelta(days=days_ago)
-            
-            # 90% complete, 10% pending
-            status = 'complete' if random.random() < 0.9 else 'pending'
-            
-            # Calculate converted amount
-            exchange_rate = EXCHANGE_RATES.get(currency, Decimal('1.00'))
-            converted_amount = amount * exchange_rate if currency != 'PHP' else amount
-            
-            # Link to manual budget occasionally (20% chance)
-            budget = None
-            if random.random() < 0.2:
-                manual_budgets = [b for b in budgets if b.budget_type == 'manual']
-                if manual_budgets:
-                    budget = random.choice(manual_budgets)
-            
-            Expense.objects.create(
-                user=user,
-                category=category,
-                amount=amount,
-                currency=currency,
-                exchange_rate=exchange_rate if currency != 'PHP' else None,
-                converted_amount=converted_amount,
-                transaction_date=transaction_date,
-                description=fake.sentence(nb_words=4),
-                status=status,
-                budget=budget
-            )
+        # Distribution: gradually increasing toward current month
+        # Months 12-10 ago: 1 expense each
+        # Months 9-7 ago: 1 expense each
+        # Months 6-4 ago: 2 expenses each
+        # Month 3 ago: 2 expenses
+        # Month 2 ago: 3 expenses
+        # Last month: 4 expenses
+        # Current month: 8 expenses
         
-        # Create 7 expenses in past months
-        for _ in range(7):
-            currency = random.choice(CURRENCIES)
-            category = random.choice(categories)
-            
-            # Amount ranges based on category (using predefined category names)
-            amount_ranges = {
-                'Food & Dining': (100, 2000),
-                'Groceries': (500, 3000),
-                'Transportation': (50, 1500),
-                'Bills & Utilities': (500, 5000),
-                'Entertainment': (200, 3000),
-                'Shopping': (500, 10000),
-                'Healthcare': (300, 5000),
-                'Education': (1000, 15000),
-                'Games & Hobbies': (200, 4000),
-                'Other Expenses': (100, 5000),
-            }
-            min_amt, max_amt = amount_ranges.get(category.name, (100, 5000))
-            amount = Decimal(random.randint(min_amt, max_amt))
-            
-            # Adjust for currency
-            if currency != 'PHP':
-                amount = Decimal(random.randint(10, 200))
-            
-            # Random date in past 11 months (30-365 days ago)
-            days_ago = random.randint(30, 365)
-            transaction_date = today - timedelta(days=days_ago)
-            
-            # 90% complete, 10% pending
-            status = 'complete' if random.random() < 0.9 else 'pending'
-            
-            # Calculate converted amount
-            exchange_rate = EXCHANGE_RATES.get(currency, Decimal('1.00'))
-            converted_amount = amount * exchange_rate if currency != 'PHP' else amount
-            
-            # Link to manual budget occasionally (20% chance)
-            budget = None
-            if random.random() < 0.2:
-                manual_budgets = [b for b in budgets if b.budget_type == 'manual']
-                if manual_budgets:
-                    budget = random.choice(manual_budgets)
-            
-            Expense.objects.create(
-                user=user,
-                category=category,
-                amount=amount,
-                currency=currency,
-                exchange_rate=exchange_rate if currency != 'PHP' else None,
-                converted_amount=converted_amount,
-                transaction_date=transaction_date,
-                description=fake.sentence(nb_words=4),
-                status=status,
-                budget=budget
-            )
+        monthly_distribution = [
+            (11, 1),  # 11 months ago
+            (10, 1),  # 10 months ago
+            (9, 1),   # 9 months ago
+            (8, 1),   # 8 months ago
+            (7, 1),   # 7 months ago
+            (6, 2),   # 6 months ago
+            (5, 2),   # 5 months ago
+            (4, 2),   # 4 months ago
+            (3, 2),   # 3 months ago
+            (2, 3),   # 2 months ago
+            (1, 4),   # last month
+            (0, 8),   # current month
+        ]
+        
+        for months_ago, count in monthly_distribution:
+            for _ in range(count):
+                currency = random.choice(CURRENCIES)
+                category = random.choice(categories)
+                
+                # Amount ranges based on category (using predefined category names)
+                amount_ranges = {
+                    'Food & Dining': (100, 2000),
+                    'Groceries': (500, 3000),
+                    'Transportation': (50, 1500),
+                    'Bills & Utilities': (500, 5000),
+                    'Entertainment': (200, 3000),
+                    'Shopping': (500, 10000),
+                    'Healthcare': (300, 5000),
+                    'Education': (1000, 15000),
+                    'Games & Hobbies': (200, 4000),
+                    'Other Expenses': (100, 5000),
+                }
+                min_amt, max_amt = amount_ranges.get(category.name, (100, 5000))
+                amount = Decimal(random.randint(min_amt, max_amt))
+                
+                # Adjust for currency
+                if currency != 'PHP':
+                    amount = Decimal(random.randint(10, 200))
+                
+                # Calculate transaction date for the target month
+                if months_ago == 0:
+                    # Current month: random day from 1st to today
+                    days_in_range = today.day
+                    random_day = random.randint(1, days_in_range)
+                    transaction_date = today.replace(day=random_day)
+                else:
+                    # Past months: random day in that month
+                    target_month = current_month_start - timedelta(days=months_ago * 30)
+                    # Get last day of target month
+                    if target_month.month == 12:
+                        next_month = target_month.replace(year=target_month.year + 1, month=1, day=1)
+                    else:
+                        next_month = target_month.replace(month=target_month.month + 1, day=1)
+                    last_day = (next_month - timedelta(days=1)).day
+                    random_day = random.randint(1, last_day)
+                    transaction_date = target_month.replace(day=random_day)
+                
+                # 95% complete, 5% pending (pending only for current month)
+                if months_ago == 0:
+                    status = 'complete' if random.random() < 0.9 else 'pending'
+                else:
+                    status = 'complete'
+                
+                # Calculate converted amount
+                exchange_rate = EXCHANGE_RATES.get(currency, Decimal('1.00'))
+                converted_amount = amount * exchange_rate if currency != 'PHP' else amount
+                
+                # Link to manual budget occasionally (20% chance)
+                budget = None
+                if random.random() < 0.2:
+                    manual_budgets = [b for b in budgets if b.budget_type == 'manual']
+                    if manual_budgets:
+                        budget = random.choice(manual_budgets)
+                
+                Expense.objects.create(
+                    user=user,
+                    category=category,
+                    amount=amount,
+                    currency=currency,
+                    exchange_rate=exchange_rate if currency != 'PHP' else None,
+                    converted_amount=converted_amount,
+                    transaction_date=transaction_date,
+                    description=fake.sentence(nb_words=4),
+                    status=status,
+                    budget=budget
+                )
