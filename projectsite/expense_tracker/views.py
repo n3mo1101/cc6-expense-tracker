@@ -14,6 +14,14 @@ from expense_tracker.services.dashboard_service import DashboardService
 from expense_tracker.services.transactions_service import TransactionsService
 from expense_tracker.services.currency_service import CurrencyService
 
+# ===== LANDING PAGE VIEW =====
+def landing_view(request):
+     # If user is logged in, send them to dashboard immediately
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    return render(request, 'landing-page.html')
+
 # ===== AUTHENTICATION VIEWS =====
 def login_view(request):
     """Handle user login"""
@@ -24,11 +32,16 @@ def login_view(request):
         
         if user is not None:
             login(request, user)
-            return redirect('home')
+            return redirect('dashboard')
         else:
             messages.error(request, 'Invalid username or password.')
     
     return render(request, 'account/login.html')
+
+
+def signup_view(request):
+    """Handle user register"""
+    return render(request, 'account/signup.html')
 
 
 def logout_view(request):

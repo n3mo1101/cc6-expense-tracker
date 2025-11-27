@@ -2,12 +2,15 @@ from django.urls import path
 from expense_tracker import views
 
 urlpatterns = [
+    # Landing page
+    path('', views.landing_view, name='home'),
+
     # Authentication
     path('accounts/login/', views.login_view, name='login'),
+    path('signup/', views.signup_view, name='signup'),
     path('logout/', views.logout_view, name='logout'),
-    
+
     # Main pages
-    path('', views.dashboard_view, name='home'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('transactions/', views.transactions_view, name='transactions'),
     path('budgets/', views.budgets_view, name='budgets'),
