@@ -29,7 +29,7 @@ SECRET_KEY = "django-insecure-61!$$es)b9ya-5rmx7c2_1rs_k7=6flnc3w&@w=@g!!s*i0t(8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['moneylens.pythonanywhere.com', '127.0.0.1']
 
 
 # Application definition
