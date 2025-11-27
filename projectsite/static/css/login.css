@@ -20,13 +20,9 @@ body {
     backdrop-filter: blur(10px);
     padding: 30px;
     border-radius: 15px;
-    /* box-shadow: 
-        0 0 10px rgba(255, 255, 255, 0.3),
-        0 10px 10px rgba(0, 0, 0, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1); */
     position: relative;
     overflow: hidden;
-    margin: 20px 0;
+    margin: 20px auto;
 }
 
 .login-container::before {
@@ -188,6 +184,11 @@ body {
     background: linear-gradient(90deg, transparent, #68C2C2, transparent);
 }
 
+.register-section p {
+    margin: 0;
+    font-size: 14px;
+}
+
 .register-link {
     color: #68C2C2;
     text-decoration: none;
@@ -284,6 +285,7 @@ body {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.3);
     transform: translateY(-2px);
+    color: white;
 }
 
 .social-btn:disabled {
@@ -298,7 +300,7 @@ body {
 }
 
 .google-btn {
-    width: auto;
+    width: 100%;
     border-color: rgba(66, 133, 244, 0.3);
 }
 
@@ -342,39 +344,181 @@ body {
     }
 }
 
-/* Responsive design */
-@media (max-width: 480px) {
+/* Tablet Devices (768px - 991px) */
+@media (max-width: 991px) {
+    .login-container {
+        max-width: 450px;
+        padding: 35px;
+    }
+}
+
+/* Mobile Devices (up to 767px) */
+@media (max-width: 767px) {
     body {
         padding: 15px;
-        align-items: flex-start;
     }
     
     .login-container {
-        margin: 10px 0;
+        max-width: 100%;
         padding: 25px 20px;
+        margin: 15px auto;
     }
     
     .login-header h2 {
         font-size: 22px;
     }
     
+    .login-header p {
+        font-size: 13px;
+    }
+}
+
+/* Small Mobile Devices (up to 480px) */
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+        align-items: flex-start;
+        padding-top: 20px;
+    }
+    
+    .login-container {
+        padding: 20px 18px;
+        margin: 10px auto;
+    }
+    
+    .login-header {
+        margin-bottom: 20px;
+    }
+    
+    .login-header h2 {
+        font-size: 20px;
+        margin-bottom: 6px;
+    }
+    
+    .login-header p {
+        font-size: 12px;
+    }
+    
     .form-group {
         margin-bottom: 14px;
     }
     
+    .form-group label {
+        font-size: 13px;
+        margin-bottom: 5px;
+    }
+    
     .form-group input {
         padding: 9px 11px;
+        font-size: 13px;
     }
     
     .login-btn {
         padding: 11px;
+        font-size: 14px;
+    }
+    
+    .social-btn {
+        padding: 9px;
+        font-size: 12px;
+    }
+    
+    .social-btn img {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .register-section p,
+    .register-link {
+        font-size: 13px;
+    }
+    
+    .forgot-password {
+        font-size: 12px;
+    }
+    
+    .divider span {
+        font-size: 11px;
+    }
+    
+    .error-message {
+        font-size: 12px;
+        padding: 8px;
+    }
+}
+
+/* Very Small Mobile Devices (up to 360px) */
+@media (max-width: 360px) {
+    .login-container {
+        padding: 18px 15px;
+    }
+    
+    .login-header h2 {
+        font-size: 18px;
+    }
+    
+    .form-group input {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+    
+    .login-btn {
+        padding: 10px;
+        font-size: 13px;
+    }
+}
+
+/* Landscape Mobile Devices */
+@media (max-width: 767px) and (orientation: landscape) {
+    body {
+        align-items: flex-start;
+        padding-top: 15px;
+        padding-bottom: 15px;
+    }
+    
+    .login-container {
+        margin: 10px auto;
+        padding: 20px;
+    }
+    
+    .login-header {
+        margin-bottom: 15px;
+    }
+    
+    .form-group {
+        margin-bottom: 12px;
+    }
+}
+
+/* Short Screen Heights */
+@media (max-height: 700px) {
+    body {
+        align-items: flex-start;
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+    
+    .login-container {
+        margin: 15px auto;
     }
 }
 
 @media (max-height: 600px) {
     body {
-        align-items: flex-start;
-        padding-top: 20px;
-        padding-bottom: 20px;
+        padding-top: 15px;
+        padding-bottom: 15px;
+    }
+    
+    .login-container {
+        margin: 10px auto;
+        padding: 20px;
+    }
+    
+    .login-header {
+        margin-bottom: 15px;
+    }
+    
+    .form-group {
+        margin-bottom: 12px;
     }
 }
