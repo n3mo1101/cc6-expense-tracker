@@ -52,7 +52,7 @@
     width: 60px;
     height: 60px;
     border-radius: 14px;
-    background-color: rgba(220, 53, 69, 0.1);
+    background-color: rgba(80, 80, 81, 0.1);
     color: var(--bs-danger);
     display: flex;
     align-items: center;
@@ -62,12 +62,18 @@
 }
 
 .category-icon.income {
-    background-color: rgba(25, 135, 84, 0.1);
     color: var(--bs-success);
 }
 
 .category-icon i {
     font-size: 1.5rem;
+}
+
+/* Category Icon Image */
+.category-icon img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
 }
 
 /* Category Details */

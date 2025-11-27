@@ -51,7 +51,16 @@
                         {% for category in categories %}
                         <li class="category-item" onclick="viewCategory('{{ category.id }}')">
                             <div class="category-icon">
-                                <i class="bi {% if category.icon %}{{ category.icon }}{% else %}bi-tag{% endif %}"></i>
+                                {% if category.icon and '/static/' in category.icon %}
+                                    <!-- Display icon image -->
+                                    <img src="{{ category.icon }}" alt="{{ category.name }}">
+                                {% elif category.icon %}
+                                    <!-- Display Bootstrap icon class (legacy) -->
+                                    <i class="bi {{ category.icon }}"></i>
+                                {% else %}
+                                    <!-- Default icon -->
+                                    <i class="bi bi-tag"></i>
+                                {% endif %}
                             </div>
                             <div class="category-details">
                                 <div class="category-name">{{ category.name }}</div>
@@ -92,7 +101,16 @@
                         {% for source in income_sources %}
                         <li class="category-item" onclick="viewIncomeSource('{{ source.id }}')">
                             <div class="category-icon income">
-                                <i class="bi {% if source.icon %}{{ source.icon }}{% else %}bi-cash-stack{% endif %}"></i>
+                                {% if source.icon and '/static/' in source.icon %}
+                                    <!-- Display icon image -->
+                                    <img src="{{ source.icon }}" alt="{{ source.name }}">
+                                {% elif source.icon %}
+                                    <!-- Display Bootstrap icon class (legacy) -->
+                                    <i class="bi {{ source.icon }}"></i>
+                                {% else %}
+                                    <!-- Default icon -->
+                                    <i class="bi bi-cash-stack"></i>
+                                {% endif %}
                             </div>
                             <div class="category-details">
                                 <div class="category-name">{{ source.name }}</div>
@@ -130,8 +148,8 @@
             </div>
             <div class="modal-body">
                 <div class="text-center mb-4">
-                    <div class="detail-icon-large mb-3">
-                        <i id="detail-category-icon" class="bi bi-tag"></i>
+                    <div class="detail-icon-large mb-3" id="detail-category-icon">
+                        <i class="bi bi-tag"></i>
                     </div>
                     <h4 id="detail-category-name" class="fw-bold mb-0">Category Name</h4>
                 </div>
@@ -167,8 +185,8 @@
             </div>
             <div class="modal-body">
                 <div class="text-center mb-4">
-                    <div class="detail-icon-large income mb-3">
-                        <i id="detail-source-icon" class="bi bi-cash-stack"></i>
+                    <div class="detail-icon-large income mb-3" id="detail-source-icon">
+                        <i class="bi bi-cash-stack"></i>
                     </div>
                     <h4 id="detail-source-name" class="fw-bold mb-0">Source Name</h4>
                 </div>
@@ -205,7 +223,7 @@
             <div class="modal-body">
                 <form id="categoryForm">
                     <input type="hidden" id="category-id">
-                    <input type="hidden" id="category-icon" value="/static/img/icons/icon-default.png">
+                    <input type="hidden" id="category-icon" value="/static/img/icons/other.svg">
                     
                     <!-- Icon Selection -->
                     <div class="mb-3">
@@ -215,7 +233,7 @@
                                  id="category-icon-display"
                                  onclick="openIconPicker(document.getElementById('category-icon').value, updateCategoryIcon)"
                                  title="Click to change icon">
-                                <img src="/static/img/icons/icon-default.png" alt="Category Icon">
+                                <img src="/static/img/icons/other.svg" alt="Category Icon">
                             </div>
                             <button type="button" 
                                     class="btn btn-sm btn-outline-primary" 
@@ -250,7 +268,7 @@
             <div class="modal-body">
                 <form id="incomeSourceForm">
                     <input type="hidden" id="source-id">
-                    <input type="hidden" id="source-icon" value="/static/img/icons/icon-default.png">
+                    <input type="hidden" id="source-icon" value="/static/img/icons/salary.svg">
                     
                     <!-- Icon Selection -->
                     <div class="mb-3">
@@ -260,7 +278,7 @@
                                  id="source-icon-display"
                                  onclick="openIconPicker(document.getElementById('source-icon').value, updateSourceIcon)"
                                  title="Click to change icon">
-                                <img src="/static/img/icons/icon-default.png" alt="Source Icon">
+                                <img src="/static/img/icons/salary.svg" alt="Source Icon">
                             </div>
                             <button type="button" 
                                     class="btn btn-sm btn-outline-primary" 
@@ -331,12 +349,10 @@
 
 {% endblock %}
 
-
 {% block extra_js %}
 <script>
     const csrfToken = '{{ csrf_token }}';
     const primaryCurrency = '{{ primary_currency }}';
 </script>
 <script src="{% static 'js/categories.js' %}"></script>
-
 {% endblock %}
