@@ -32,6 +32,13 @@ const availableAvatars = [
     'avatar6.png',
     'avatar7.png',
     'avatar8.png',
+    'avatar9.png',
+    'avatar10.png',
+    'avatar11.png',
+    'avatar12.png',
+    'avatar13.png',
+    'avatar14.png',
+    'avatar15.png',    
 ];
 
 let currentIconCallback = null;
@@ -127,9 +134,7 @@ function openAvatarPicker(currentAvatar, callback) {
         const avatarPath = `/static/img/avatars/${avatar}`;
         const isSelected = avatarPath === currentAvatar;
         
-        const col = document.createElement('div');
-        col.className = 'col-4 col-md-3 text-center';
-        
+        // Remove Bootstrap column classes, use our custom structure
         const item = document.createElement('div');
         item.className = `avatar-picker-item ${isSelected ? 'selected' : ''}`;
         item.onclick = () => selectAvatar(avatarPath, item);
@@ -139,12 +144,22 @@ function openAvatarPicker(currentAvatar, callback) {
         img.alt = avatar;
         img.onerror = function() {
             this.style.display = 'none';
-            item.innerHTML = '<i class="bi bi-person-circle fs-1 text-muted"></i>';
+            // Create a fallback circular avatar
+            const fallback = document.createElement('div');
+            fallback.className = 'avatar-fallback';
+            fallback.innerHTML = '<i class="bi bi-person-circle fs-1 text-muted"></i>';
+            fallback.style.width = '70px';
+            fallback.style.height = '70px';
+            fallback.style.borderRadius = '50%';
+            fallback.style.display = 'flex';
+            fallback.style.alignItems = 'center';
+            fallback.style.justifyContent = 'center';
+            fallback.style.background = 'var(--bs-light)';
+            item.appendChild(fallback);
         };
         
         item.appendChild(img);
-        col.appendChild(item);
-        grid.appendChild(col);
+        grid.appendChild(item); // Add directly to grid, no column wrapper
     });
     
     const modal = new bootstrap.Modal(document.getElementById('avatarPickerModal'));

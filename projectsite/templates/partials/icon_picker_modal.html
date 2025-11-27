@@ -38,10 +38,10 @@
     cursor: pointer;
     border: 2px solid transparent;
     border-radius: 8px;
-    padding: 12px;
+    padding: 4px;
     transition: all 0.2s ease;
     text-align: center;
-    background: var(--bs-light);
+    background: var(--bs-transparent);
 }
 
 .icon-picker-item:hover {
@@ -57,19 +57,36 @@
 }
 
 .icon-picker-item img {
-    width: 48px;
-    height: 48px;
+    width: 54px;
+    height: 54px;
     object-fit: contain;
 }
 
 /* Avatar Picker Styles */
+#avatarPickerGrid {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    justify-items: center;
+}
+
+.avatar-col {
+    /* Remove any Bootstrap column styling */
+    width: 100%;
+}
+
 .avatar-picker-item {
     cursor: pointer;
     border: 3px solid transparent;
     border-radius: 50%;
-    padding: 4px;
+    padding: 2px;
     transition: all 0.2s ease;
-    background: var(--bs-light);
+    background: var(--bs-transparent);
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .avatar-picker-item:hover {
@@ -83,8 +100,8 @@
 }
 
 .avatar-picker-item img {
-    width: 80px;
-    height: 80px;
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
     object-fit: cover;
 }
@@ -100,7 +117,7 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    background: var(--bs-light);
+    background: var(--bs-transparent);
 }
 
 .current-icon-display:hover {
@@ -109,8 +126,8 @@
 }
 
 .current-icon-display img {
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     object-fit: contain;
 }
 

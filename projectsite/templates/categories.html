@@ -146,7 +146,7 @@
                 <h5 class="modal-title">Category Details</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body">    
                 <div class="text-center mb-4">
                     <div class="detail-icon-large mb-3" id="detail-category-icon">
                         <i class="bi bi-tag"></i>
@@ -223,7 +223,7 @@
             <div class="modal-body">
                 <form id="categoryForm">
                     <input type="hidden" id="category-id">
-                    <input type="hidden" id="category-icon" value="/static/img/icons/other.svg">
+                    <input type="hidden" id="category-icon" value="{% static 'img/icons/icon-default.png' %}">
                     
                     <!-- Icon Selection -->
                     <div class="mb-3">
@@ -233,7 +233,7 @@
                                  id="category-icon-display"
                                  onclick="openIconPicker(document.getElementById('category-icon').value, updateCategoryIcon)"
                                  title="Click to change icon">
-                                <img src="/static/img/icons/other.svg" alt="Category Icon">
+                                <img src="{% static 'img/icons/icon-default.png' %}" alt="Category Icon">
                             </div>
                             <button type="button" 
                                     class="btn btn-sm btn-outline-primary" 
@@ -268,7 +268,7 @@
             <div class="modal-body">
                 <form id="incomeSourceForm">
                     <input type="hidden" id="source-id">
-                    <input type="hidden" id="source-icon" value="/static/img/icons/salary.svg">
+                    <input type="hidden" id="source-icon" value="{% static 'img/icons/icon-default.png' %}">
                     
                     <!-- Icon Selection -->
                     <div class="mb-3">
@@ -278,7 +278,7 @@
                                  id="source-icon-display"
                                  onclick="openIconPicker(document.getElementById('source-icon').value, updateSourceIcon)"
                                  title="Click to change icon">
-                                <img src="/static/img/icons/salary.svg" alt="Source Icon">
+                                <img src="{% static 'img/icons/icon-default.png' %}" alt="Source Icon">
                             </div>
                             <button type="button" 
                                     class="btn btn-sm btn-outline-primary" 

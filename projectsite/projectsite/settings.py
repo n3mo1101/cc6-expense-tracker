@@ -139,4 +139,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = '/accounts/login/' # where @login_required will send users
 LOGIN_REDIRECT_URL = '/' # where to go after successful login
 LOGOUT_REDIRECT_URL = '/accounts/login/' # after logout, go back to login
-SIGNUP_URL = '/accounts/signup/'
+
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_ON_GET = True
+
+ACCOUNT_LOGIN_METHODS = ['username', 'email']
+ACCOUNT_SIGNUP_FIELDS = ['username', 'email', 'password1', 'password2']
