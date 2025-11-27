@@ -1,252 +1,370 @@
-import uuid
 from django.db import models
-from django.conf import settings
-from django.utils import timezone
+from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from decimal import Decimal
+import uuid
 
 
-# Base model with common fields for all models
+# ============================================================================
+# BASE MODEL: Abstract base model with common fields for all models.
+# ============================================================================
+
 class BaseModel(models.Model):
-    public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         abstract = True
+        ordering = ['-created_at']
 
 
-# Extended user profile information
-class UserProfile(BaseModel):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='profile'
-    )
-    
-    # Predefined avatar choices with static file paths
-    AVATAR_CHOICES = [
-        ('static/avatars/avatar1.png', 'Avatar 1'),
-        ('static/avatars/avatar2.png', 'Avatar 2'), 
-        ('static/avatars/avatar3.png', 'Avatar 3'),
-        ('static/avatars/avatar4.png', 'Avatar 4'),
-        ('static/avatars/avatar5.png', 'Avatar 5'),
-        ('static/avatars/avatar6.png', 'Avatar 6'),
-        ('static/avatars/avatar7.png', 'Avatar 7'),
-        ('static/avatars/avatar8.png', 'Avatar 8'),
-    ]
-    
-    profile_picture = models.CharField(
-        max_length=100,
-        choices=AVATAR_CHOICES,
-        default='avatars/avatar1.png',
-        help_text="Choose a profile avatar"
-    )
-    default_currency = models.CharField(max_length=3, default='PHP')
-    timezone = models.CharField(max_length=50, default='UTC')
-    
+# ============================================================================
+# USER PROFILE: Extends Django's User model with finance-related settings.
+# ============================================================================
+
+class UserProfile(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    primary_currency = models.CharField(max_length=3, default='PHP')
+    avatar = models.CharField(max_length=255, default='/static/img/avatars/avatar1.png')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         db_table = 'user_profile'
-    
+
     def __str__(self):
         return f"{self.user.username}'s Profile"
-    
-    # Get the static URL for the selected avatar
-    def get_avatar_url(self):
-        return f"{settings.STATIC_URL}{self.profile_picture}"
-    
-    @property # Property for easy template access
-    def avatar_url(self):
-        return self.get_avatar_url()
 
 
-# Categories for expenses (both predefined and user-defined)
-class ExpenseCategory(BaseModel):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
-    is_predefined = models.BooleanField(default=False)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        help_text="NULL for predefined categories, user for custom categories"
+# ============================================================================
+# WALLET: Tracks user's balance per currency.
+# ============================================================================
+
+class Wallet(BaseModel):
+    currency = models.CharField(max_length=3)
+    balance = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))]
     )
-    
+    is_primary = models.BooleanField(default=False)
+
     class Meta:
-        db_table = 'expense_category'
-        indexes = [
-            models.Index(fields=['is_predefined']),
-        ]
-        verbose_name = "Expense Category"
-        verbose_name_plural = "Expense Categories"
-    
+        db_table = 'wallet'
+        unique_together = ['user', 'currency']
+
     def __str__(self):
-        return self.name
-    
+        return f"{self.user.username} - {self.currency} {self.balance}"
+
     def save(self, *args, **kwargs):
-        # If it's predefined, ensure user is NULL
-        if self.is_predefined:
-            self.user = None
+        if self.is_primary:
+            Wallet.objects.filter(user=self.user, is_primary=True).update(is_primary=False)
         super().save(*args, **kwargs)
 
 
-# Budgets created by users
+# ============================================================================
+# CATEGORY & INCOME SOURCE: User-defined expense categories & income sources.
+# ============================================================================
+
+class Category(BaseModel):
+    name = models.CharField(max_length=100)
+    icon = models.CharField(max_length=255, null=True, blank=True, default='/static/img/icons/icon-default.png')
+
+    class Meta:
+        db_table = 'category'
+        unique_together = ['user', 'name']
+        verbose_name_plural = 'Categories'
+
+    def __str__(self):
+        return self.name
+
+
+class IncomeSource(BaseModel):
+    name = models.CharField(max_length=100)
+    icon = models.CharField(max_length=255, null=True, blank=True, default='/static/img/icons/icon-default.png')
+
+    class Meta:
+        db_table = 'income_source'
+        unique_together = ['user', 'name']
+
+    def __str__(self):
+        return self.name
+
+
+# ============================================================================
+# BUDGET: Manages spending limits (manual or category-based).
+# ============================================================================
+
 class Budget(BaseModel):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+    BUDGET_TYPES = [
+        ('manual', 'Manual'),
+        ('category_filter', 'Category Filter'),
+    ]
+    RECURRENCE_PATTERNS = [
+        ('one_time', 'One Time'),
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+        ('yearly', 'Yearly'),
+    ]
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+    ]
+
+    name = models.CharField(max_length=200)
+    budget_type = models.CharField(max_length=20, choices=BUDGET_TYPES)
+    amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    currency = models.CharField(max_length=3)
+    spent_amount = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
+    recurrence_pattern = models.CharField(max_length=10, choices=RECURRENCE_PATTERNS)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    last_reset_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
+
+    # Category filters for category_filter budget type (stores category IDs)
+    category_filters = models.ManyToManyField(
+        Category,
+        blank=True,
         related_name='budgets'
     )
-    name = models.CharField(max_length=255)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    currency_code = models.CharField(max_length=3, default='PHP')
-    start_date = models.DateField()
-    end_date = models.DateField()
-    description = models.TextField(blank=True, null=True)
-    
+
     class Meta:
         db_table = 'budget'
-        indexes = [
-            models.Index(fields=['start_date', 'end_date']),
-        ]
-    
+
     def __str__(self):
-        return f"{self.name} - {self.user.username}"
-    
+        return f"{self.name} - {self.spent_amount}/{self.amount}"
+
     @property
-    def is_active(self):
-    # Check if budget is currently active
-        today = timezone.now().date()
-        return self.start_date <= today <= self.end_date
+    def remaining_amount(self):
+        return self.amount - self.spent_amount
+
+    @property
+    def percentage_used(self):
+        if self.amount == 0:
+            return 0
+        return (self.spent_amount / self.amount) * 100
 
 
-# Categories allocated within a budget
-class BudgetCategory(BaseModel):
+# ============================================================================
+# RECURRING TRANSACTION: Template for auto-generating recurring income/expenses.
+# ============================================================================
+
+class RecurringTransaction(BaseModel):
+    TRANSACTION_TYPES = [
+        ('income', 'Income'),
+        ('expense', 'Expense'),
+    ]
+    RECURRENCE_PATTERNS = [
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+        ('yearly', 'Yearly'),
+        ('custom', 'Custom'),
+    ]
+
+    type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='recurring_expenses'
+    )
+    income_source = models.ForeignKey(
+        IncomeSource,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='recurring_incomes'
+    )
+    amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    currency = models.CharField(max_length=3)
+    description = models.TextField(null=True, blank=True)
+    recurrence_pattern = models.CharField(max_length=10, choices=RECURRENCE_PATTERNS)
+    custom_interval_days = models.IntegerField(null=True, blank=True)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    last_generated_date = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
     budget = models.ForeignKey(
         Budget,
-        on_delete=models.CASCADE,
-        related_name='budget_categories'
-    )
-    category = models.ForeignKey(
-        ExpenseCategory,
-        on_delete=models.CASCADE,
-        related_name='budget_allocations'
-    )
-    allocated_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    
-    class Meta:
-        db_table = 'budget_category'
-        unique_together = ['budget', 'category']
-        verbose_name = "Budget Category"
-        verbose_name_plural = "Budget Categories"
-    
-    def __str__(self):
-        return f"{self.budget.name} - {self.category.name}: {self.allocated_amount}"
-
-
-# Expense transactions
-class Expense(BaseModel):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='expenses'
-    )
-    category = models.ForeignKey(
-        ExpenseCategory,
-        on_delete=models.RESTRICT,
-        related_name='expenses'
-    )
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    currency_code = models.CharField(max_length=3, default='PHP')
-    description = models.TextField(blank=True, null=True)
-    expense_date = models.DateField()
-    is_recurring = models.BooleanField(default=False)
-    recurrence_rule = models.CharField(max_length=500, blank=True, null=True)
-    parent_expense = models.ForeignKey(
-        'self',
         on_delete=models.SET_NULL,
-        blank=True,
         null=True,
-        related_name='recurring_instances'
+        blank=True,
+        related_name='recurring_transactions'
     )
-    
+
     class Meta:
-        db_table = 'expense'
-        indexes = [
-            models.Index(fields=['public_id']),
-            models.Index(fields=['expense_date']),
-            models.Index(fields=['is_recurring']),
-        ]
-        ordering = ['-expense_date', '-created_at']
-    
+        db_table = 'recurring_transaction'
+
     def __str__(self):
-        return f"{self.amount} {self.currency_code} - {self.category.name} - {self.user.username}"
-    
-    @property
-    def is_recurring_instance(self):
-    # Check if this expense is part of a recurring series
-        return self.parent_expense is not None
+        name = self.category.name if self.category else self.income_source.name if self.income_source else 'Unknown'
+        return f"{self.get_type_display()} - {name} ({self.recurrence_pattern})"
 
 
-# Income transactions
+# ============================================================================
+# INCOME: Records income transactions.
+# ============================================================================
+
 class Income(BaseModel):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+    TRANSACTION_STATUS = [
+        ('pending', 'Pending'),
+        ('complete', 'Complete'),
+    ]
+
+    source = models.ForeignKey(
+        IncomeSource,
+        on_delete=models.PROTECT,
         related_name='incomes'
     )
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    currency_code = models.CharField(max_length=3, default='PHP')
-    source = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
-    income_date = models.DateField()
-    is_recurring = models.BooleanField(default=False)
-    recurrence_rule = models.CharField(max_length=500, blank=True, null=True)
-    
+    amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    currency = models.CharField(max_length=3)
+    converted_amount = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    exchange_rate = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
+    transaction_date = models.DateField()
+    description = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=10, choices=TRANSACTION_STATUS, default='pending')
+    recurring_transaction = models.ForeignKey(
+        RecurringTransaction,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='generated_incomes'
+    )
+
     class Meta:
         db_table = 'income'
-        indexes = [
-            models.Index(fields=['public_id']),
-            models.Index(fields=['income_date']),
-        ]
-        ordering = ['-income_date', '-created_at']
-    
+        ordering = ['-transaction_date', '-created_at']
+
     def __str__(self):
-        return f"{self.amount} {self.currency_code} - {self.source} - {self.user.username}"
+        return f"{self.source.name} - {self.currency} {self.amount}"
+
+    def save(self, *args, **kwargs):
+        try:
+            primary_currency = self.user.profile.primary_currency
+            if self.currency != primary_currency and self.exchange_rate:
+                self.converted_amount = self.amount * self.exchange_rate
+            elif self.currency == primary_currency:
+                self.converted_amount = self.amount
+        except Exception:
+            # If profile doesn't exist or other error, just save amount as converted
+            if self.converted_amount is None:
+                self.converted_amount = self.amount
+        super().save(*args, **kwargs)
+
+# ============================================================================
+# EXPENSE: Records expense transactions.
+# ============================================================================
+
+class Expense(BaseModel):
+    TRANSACTION_STATUS = [
+        ('pending', 'Pending'),
+        ('complete', 'Complete'),
+    ]
+
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.PROTECT,
+        related_name='expenses'
+    )
+    amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    currency = models.CharField(max_length=3)
+    converted_amount = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    exchange_rate = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
+    transaction_date = models.DateField()
+    description = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=10, choices=TRANSACTION_STATUS, default='pending')
+    budget = models.ForeignKey(
+        Budget,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='expenses'
+    )
+    recurring_transaction = models.ForeignKey(
+        RecurringTransaction,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='generated_expenses'
+    )
+
+    class Meta:
+        db_table = 'expense'
+        ordering = ['-transaction_date', '-created_at']
+
+    def __str__(self):
+        return f"{self.category.name} - {self.currency} {self.amount}"
+
+    def save(self, *args, **kwargs):
+        if self.currency != self.user.profile.primary_currency and self.exchange_rate:
+            self.converted_amount = self.amount * self.exchange_rate
+        elif self.currency == self.user.profile.primary_currency:
+            self.converted_amount = self.amount
+        super().save(*args, **kwargs)
 
 
-# Signal to automatically create UserProfile when User is created
-from django.db.models.signals import post_save
-from django.dispatch import receiver
+# ============================================================================
+# CURRENCY CACHE: Cached currency codes and exchange rates.
+# ============================================================================
 
-# Create user profile only when user is created
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+# Rates are stored relative to USD as base currency.
+class CurrencyCache(models.Model):
+    code = models.CharField(max_length=3, primary_key=True)
+    name = models.CharField(max_length=100)
+    exchange_rate = models.DecimalField(max_digits=15, decimal_places=6)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'currency_cache'
+        verbose_name = 'Currency'
+        verbose_name_plural = 'Currencies'
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+
+# ============================================================================
+# SIGNALS
+# ============================================================================
+
+@receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
-    if created and not UserProfile.objects.filter(user=instance).exists():
+    # Auto-create UserProfile when User is created.
+    if created:
         UserProfile.objects.create(user=instance)
 
-# Save user profile if it exists
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def save_user_profile(sender, instance, **kwargs):
-    if hasattr(instance, 'profile'):
-        instance.profile.save()
 
-# Function to create predefined expense categories
-def create_predefined_categories():
-    predefined_categories = [
-        ('Food', 'Groceries, restaurants, coffee shops'),
-        ('Housing', 'Rent, mortgage, utilities'),
-        ('Transportation', 'Gas, public transport, car maintenance'),
-        ('Entertainment', 'Movies, concerts, hobbies'),
-        ('Healthcare', 'Doctor visits, medication, insurance'),
-        ('Shopping', 'Clothing, electronics, personal items'),
-        ('Education', 'Tuition, books, courses'),
-        ('Utilities', 'Electricity, water, internet, phone'),
-    ]
-    
-    for name, description in predefined_categories:
-        ExpenseCategory.objects.get_or_create(
-            name=name,
-            description=description,
-            is_predefined=True,
-            user=None
+@receiver(post_save, sender=UserProfile)
+def create_primary_wallet(sender, instance, created, **kwargs):
+    # Auto-create primary Wallet when UserProfile is created.
+    if created:
+        Wallet.objects.create(
+            user=instance.user,
+            currency=instance.primary_currency,
+            is_primary=True
         )

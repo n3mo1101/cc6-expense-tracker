@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profile - MoneyLens{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Toast Container -->
+<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Profile</h1>
+        <p class="text-muted mb-0">Manage your account settings</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Profile Information Card -->
+    <div class="col-lg-8">
+        <div class="card border">
+            <div class="card-body p-4">
+                <!-- <img src="{{ user.profile.avatar.url }}" alt="Profile" class="profile-avatar"> -->
+                <!-- Profile Avatar Section -->
+                <div class="text-center mb-4">
+                    <div class="profile-avatar-wrapper">
+                        <div class="current-avatar-display" 
+                            id="profile-avatar-display"
+                            onclick="openAvatarPicker(document.getElementById('profile-avatar').value, updateProfileAvatar)"
+                            title="Click to change avatar">
+                            <img class="profile-avatar" src="{{ user.profile.avatar|default:'/static/img/avatars/avatar1.png' }}" alt="Profile Avatar">
+                        </div>
+                        <button type="button" class="profile-avatar-edit"
+                            onclick="openAvatarPicker(document.getElementById('profile-avatar').value, updateProfileAvatar)">
+                            <i class="bi bi-camera-fill"></i>
+                        </button>
+                    </div>
+                    <h4 class="fw-bold mt-3 mb-0">{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted">{{ user.email }}</p>
+                </div>
+
+                <hr class="my-4">
+
+                <!-- Profile Form -->
+                <form id="profileForm">
+                    <input type="hidden" id="profile-avatar" value="{{ user.profile.avatar|default:'/static/img/avatars/avatar1.png' }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="first-name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first-name" value="{{ user.first_name }}" placeholder="First name">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="last-name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last-name" value="{{ user.last_name }}" placeholder="Last name">
+                        </div>
+                    </div>
+
+                    <div class="mb-3 mt-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" value="{{ user.username }}" readonly>
+                        <div class="form-text">Username cannot be changed</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" value="{{ user.email }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="primary-currency" class="form-label">Primary Currency</label>
+                        <select class="form-select" id="primary-currency">
+                            {% for currency in currencies %}
+                            <option value="{{ currency.code }}" {% if currency.code == user.profile.primary_currency %}selected{% endif %}>
+                                {{ currency.code }} - {{ currency.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">This is your default currency for transactions</div>
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-end mt-4">
+                        <button type="button" class="btn btn-outline-primary" onclick="openChangePasswordModal()">
+                            <i class="bi bi-key me-2"></i>Change Password
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="saveProfile()">
+                            <i class="bi bi-check-lg me-2"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wallet Balance Card -->
+    <div class="col-lg-4">
+        <div class="card wallet-balance-card border-0">
+            <div class="card-body p-4">
+                <div class="wallet-icon mb-3">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <p class="wallet-label mb-2">Total Balance</p>
+                <h2 class="wallet-balance mb-3">{{ wallet.currency }} {{ wallet.balance|floatformat:2 }}</h2>
+                
+                <div class="wallet-breakdown">
+                    <div class="wallet-item">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-arrow-up-circle text-success"></i>
+                            <span class="text-muted">Income</span>
+                        </div>
+                        <span class="fw-semibold text-success">{{ wallet.currency }} {{ wallet.total_income|floatformat:2 }}</span>
+                    </div>
+                    <div class="wallet-item">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-arrow-down-circle text-danger"></i>
+                            <span class="text-muted">Expenses</span>
+                        </div>
+                        <span class="fw-semibold text-danger">{{ wallet.currency }} {{ wallet.total_expenses|floatformat:2 }}</span>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-top">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small">This Month</span>
+                        <span class="fw-semibold">{{ wallet.currency }} {{ wallet.monthly_balance|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats Card -->
+        <div class="card border mt-3">
+            <div class="card-body p-4">
+                <h6 class="fw-semibold mb-3">Quick Stats</h6>
+                <div class="stat-item">
+                    <span class="text-muted">Active Budgets</span>
+                    <span class="fw-semibold">{{ stats.active_budgets }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="text-muted">Total Transactions</span>
+                    <span class="fw-semibold">{{ stats.total_transactions }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="text-muted">Categories</span>
+                    <span class="fw-semibold">{{ stats.categories_count }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="passwordForm">
+                    <div class="mb-3">
+                        <label for="current-password" class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="current-password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new-password" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="new-password" required>
+                        <div class="form-text">Must be at least 8 characters</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirm-password" class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="confirm-password" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="changePassword()">Change Password</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Include the icon-picker modal -->
+    {% include 'partials/icon_picker_modal.html' %}
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+    const csrfToken = '{{ csrf_token }}';
+</script>
+<script src="{% static 'js/profile.js' %}"></script>
+{% endblock %}

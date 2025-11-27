@@ -1,353 +1,343 @@
+"""
+Management command to generate sample data using Faker.
+Run with: python manage.py create_sample_data
+
+Creates:
+- 5 sample users (with profiles and wallets)
+- Default categories and income sources for each user
+- 10 incomes, 25 expenses, 4 budgets, 4 recurring transactions per user
+"""
+
 import random
-from datetime import datetime, timedelta
+from decimal import Decimal
+from datetime import timedelta
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 from django.contrib.auth.models import User
-from expense_tracker.models import UserProfile, ExpenseCategory, Budget, Expense, Income, BudgetCategory
+from django.utils import timezone
+from faker import Faker
+
+from expense_tracker.models import (
+    UserProfile, Wallet, Category, IncomeSource,
+    Budget, RecurringTransaction, Income, Expense
+)
+
+fake = Faker()
+
+# ============================================================================
+# DEFAULT DATA
+# ============================================================================
+
+DEFAULT_CATEGORIES = [
+    {'name': 'Food', 'icon': 'utensils'},
+    {'name': 'Transport', 'icon': 'car'},
+    {'name': 'Utilities', 'icon': 'bolt'},
+    {'name': 'Entertainment', 'icon': 'film'},
+    {'name': 'Shopping', 'icon': 'bag-shopping'},
+    {'name': 'Health', 'icon': 'heart-pulse'},
+    {'name': 'Education', 'icon': 'graduation-cap'},
+    {'name': 'Bills', 'icon': 'file-invoice'},
+]
+
+DEFAULT_INCOME_SOURCES = [
+    {'name': 'Salary', 'icon': 'briefcase'},
+    {'name': 'Freelance', 'icon': 'laptop'},
+    {'name': 'Business', 'icon': 'store'},
+    {'name': 'Investment', 'icon': 'chart-line'},
+    {'name': 'Gift', 'icon': 'gift'},
+]
+
+CURRENCIES = ['PHP', 'PHP', 'PHP', 'PHP', 'USD', 'EUR']  # Weighted towards PHP
+
+# Exchange rates (approximate, for sample data only)
+EXCHANGE_RATES = {
+    'PHP': Decimal('1.00'),
+    'USD': Decimal('56.50'),
+    'EUR': Decimal('61.20'),
+}
 
 
 class Command(BaseCommand):
-    help = 'Generate sample data for expense tracker application'
-    
-    def add_arguments(self, parser):
-        parser.add_argument(
-            '--delete',
-            action='store_true',
-            help='Delete all sample data instead of creating',
-        )
-        parser.add_argument(
-            '--users',
-            type=int,
-            default=4,
-            help='Number of sample users to create (default: 4)',
-        )
-    
+    help = 'Generate sample data for Cashew app'
+
     def handle(self, *args, **options):
-        if options['delete']:
-            self.delete_all_data()
-        else:
-            self.create_sample_data(options['users'])
-    
-    def create_sample_data(self, num_users=4):
-        """Generate comprehensive sample data for testing"""
-        self.stdout.write(self.style.SUCCESS('🚀 Starting to generate sample data...'))
+        self.stdout.write('Creating sample data...\n')
         
-        # Create sample users
-        users = self.create_sample_users(num_users)
+        # Clear existing sample data (optional)
+        self.clear_sample_data()
         
-        # Create predefined categories
-        predefined_categories = self.create_predefined_categories()
-        
-        # Create user-specific categories and data for each user
-        for user in users:
-            self.stdout.write(f'📊 Creating data for user: {user.username}')
+        # Create 5 sample users
+        for i in range(5):
+            user = self.create_user(i + 1)
+            categories = self.create_categories(user)
+            income_sources = self.create_income_sources(user)
+            self.create_wallets(user)
+            self.create_budgets(user, categories)
+            self.create_recurring_transactions(user, categories, income_sources)
+            self.create_incomes(user, income_sources)
+            self.create_expenses(user, categories)
             
-            # Create user profile if it doesn't exist
-            profile, created = UserProfile.objects.get_or_create(user=user)
-            if created:
-                profile.default_currency = random.choice(['USD', 'EUR', 'PHP', 'GBP'])
-                profile.timezone = random.choice(['UTC', 'US/Eastern', 'Europe/London', 'Asia/Manila'])
-                
-                # Assign random avatar from AVATAR_CHOICES
-                avatar_choices = [choice[0] for choice in UserProfile.AVATAR_CHOICES]
-                profile.profile_picture = random.choice(avatar_choices)
-                profile.save()
-                self.stdout.write(f"   🎨 Assigned avatar: {profile.profile_picture}")
-            
-            # Create user-specific categories
-            user_categories = self.create_user_categories(user)
-            all_categories = predefined_categories + user_categories
-            
-            # Create budgets
-            budgets = self.create_sample_budgets(user, all_categories)
-            
-            # Create expenses
-            self.create_sample_expenses(user, all_categories)
-            
-            # Create income
-            self.create_sample_income(user)
+            self.stdout.write(f'  Created data for user: {user.username}')
         
-        self.stdout.write(self.style.SUCCESS('✅ Sample data generation completed!'))
-        self.print_summary()
-    
-    def create_sample_users(self, num_users):
-        """Create sample users"""
-        first_names = ['John', 'Jane', 'Mike', 'Sarah', 'David', 'Lisa', 'Robert', 'Emily']
-        last_names = ['Doe', 'Smith', 'Wilson', 'Jones', 'Brown', 'Davis', 'Miller', 'Taylor']
-        
-        users = []
-        for i in range(num_users):
-            first_name = random.choice(first_names)
-            last_name = random.choice(last_names)
-            username = f"{first_name.lower()}_{last_name.lower()}"
-            email = f"{username}@example.com"
-            
-            user, created = User.objects.get_or_create(
-                username=username,
-                defaults={
-                    'email': email,
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'is_active': True
-                }
-            )
-            if created:
-                user.set_password('password123')
-                user.save()
-                self.stdout.write(f"👤 Created user: {user.username}")
-            users.append(user)
-        
-        return users
-    
-    def create_predefined_categories(self):
-        """Create predefined expense categories"""
-        predefined_categories = [
-            ('Food & Dining', 'Groceries, restaurants, coffee shops'),
-            ('Housing', 'Rent, mortgage, utilities'),
-            ('Transportation', 'Gas, public transport, car maintenance'),
-            ('Entertainment', 'Movies, concerts, hobbies'),
-            ('Healthcare', 'Doctor visits, medication, insurance'),
-            ('Shopping', 'Clothing, electronics, personal items'),
-            ('Travel', 'Flights, hotels, vacation expenses'),
-            ('Education', 'Tuition, books, courses'),
-            ('Utilities', 'Electricity, water, internet, phone'),
-            ('Personal Care', 'Haircuts, cosmetics, gym'),
-        ]
-        
+        self.stdout.write(self.style.SUCCESS('\nSample data created successfully!'))
+        self.stdout.write('\nSample users (password: "password123"):')
+        for i in range(1, 6):
+            self.stdout.write(f'  - testuser{i}')
+
+    def clear_sample_data(self):
+        """Remove existing sample data."""
+        User.objects.filter(username__startswith='testuser').delete()
+        self.stdout.write('  Cleared existing sample data')
+
+    def create_user(self, index):
+        """Create a sample user with profile."""
+        user = User.objects.create_user(
+            username=f'testuser{index}',
+            email=f'testuser{index}@example.com',
+            password='password123',
+            first_name=fake.first_name(),
+            last_name=fake.last_name()
+        )
+        # Profile is auto-created via signal, just update currency
+        user.profile.primary_currency = 'PHP'
+        user.profile.save()
+        return user
+
+    def create_categories(self, user):
+        """Create default categories for user."""
         categories = []
-        for name, description in predefined_categories:
-            category, created = ExpenseCategory.objects.get_or_create(
-                name=name,
-                defaults={
-                    'description': description,
-                    'is_predefined': True,
-                    'user': None
-                }
-            )
-            if created:
-                self.stdout.write(f"📁 Created predefined category: {name}")
-            categories.append(category)
-        
-        return categories
-    
-    def create_user_categories(self, user):
-        """Create user-specific categories"""
-        user_categories_data = [
-            ('Side Projects', 'Income from freelance work or side projects'),
-            ('Investment Returns', 'Dividends, interest, or capital gains'),
-            ('Gifts Received', 'Monetary gifts from family or friends'),
-            ('Business Expenses', 'Work-related expenses'),
-            ('Home Improvement', 'Renovations and home maintenance'),
-        ]
-        
-        categories = []
-        for name, description in user_categories_data:
-            category, created = ExpenseCategory.objects.get_or_create(
-                name=name,
+        for cat_data in DEFAULT_CATEGORIES:
+            cat = Category.objects.create(
                 user=user,
-                defaults={
-                    'description': description,
-                    'is_predefined': False
-                }
+                name=cat_data['name'],
+                icon=cat_data['icon']
             )
-            if created:
-                self.stdout.write(f"📁 Created user category for {user.username}: {name}")
-            categories.append(category)
-        
+            categories.append(cat)
         return categories
-    
-    def create_sample_budgets(self, user, categories):
-        """Create sample budgets for a user"""
-        current_date = timezone.now().date()
+
+    def create_income_sources(self, user):
+        """Create default income sources for user."""
+        sources = []
+        for src_data in DEFAULT_INCOME_SOURCES:
+            src = IncomeSource.objects.create(
+                user=user,
+                name=src_data['name'],
+                icon=src_data['icon']
+            )
+            sources.append(src)
+        return sources
+
+    def create_wallets(self, user):
+        """Create additional wallets for USD and EUR."""
+        # Primary PHP wallet is auto-created via signal
+        Wallet.objects.create(user=user, currency='USD', balance=Decimal('0.00'))
+        Wallet.objects.create(user=user, currency='EUR', balance=Decimal('0.00'))
+
+    def create_budgets(self, user, categories):
+        """Create 4 budgets per user."""
+        today = timezone.now().date()
         
-        budgets_data = [
+        budgets_config = [
             {
-                'name': 'Monthly Budget',
-                'total_amount': random.randint(2000, 5000),
-                'start_date': current_date.replace(day=1),
-                'end_date': (current_date.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+                'name': 'Monthly Groceries',
+                'budget_type': 'category_filter',
+                'amount': Decimal('15000.00'),
+                'recurrence_pattern': 'monthly',
+                'categories': [c for c in categories if c.name == 'Food'],
             },
             {
-                'name': 'Quarterly Savings Goal',
-                'total_amount': random.randint(4000, 8000),
-                'start_date': current_date.replace(day=1),
-                'end_date': (current_date.replace(day=1) + timedelta(days=93)).replace(day=1) - timedelta(days=1)
-            }
+                'name': 'Entertainment Budget',
+                'budget_type': 'category_filter',
+                'amount': Decimal('5000.00'),
+                'recurrence_pattern': 'monthly',
+                'categories': [c for c in categories if c.name == 'Entertainment'],
+            },
+            {
+                'name': 'Vacation Fund',
+                'budget_type': 'manual',
+                'amount': Decimal('50000.00'),
+                'recurrence_pattern': 'one_time',
+                'categories': [],
+            },
+            {
+                'name': 'Utilities & Bills',
+                'budget_type': 'category_filter',
+                'amount': Decimal('10000.00'),
+                'recurrence_pattern': 'monthly',
+                'categories': [c for c in categories if c.name in ['Utilities', 'Bills']],
+            },
         ]
         
-        budgets = []
-        for budget_data in budgets_data:
-            budget, created = Budget.objects.get_or_create(
+        for config in budgets_config:
+            budget = Budget.objects.create(
                 user=user,
-                name=budget_data['name'],
-                defaults={
-                    'total_amount': budget_data['total_amount'],
-                    'currency_code': 'USD',
-                    'start_date': budget_data['start_date'],
-                    'end_date': budget_data['end_date'],
-                    'description': f"{budget_data['name']} for {user.username}"
-                }
+                name=config['name'],
+                budget_type=config['budget_type'],
+                amount=config['amount'],
+                currency='PHP',
+                recurrence_pattern=config['recurrence_pattern'],
+                start_date=today.replace(day=1),
+                end_date=today + timedelta(days=365) if config['recurrence_pattern'] == 'one_time' else None,
+                status='active'
             )
-            
-            if created:
-                self.stdout.write(f"💰 Created budget for {user.username}: {budget.name}")
-                
-                # Create budget categories
-                selected_categories = random.sample(categories, min(5, len(categories)))
-                total_allocated = 0
-                
-                for category in selected_categories:
-                    # Allocate random amount (10-40% of budget)
-                    allocated_amount = round(budget.total_amount * random.uniform(0.1, 0.4), 2)
-                    total_allocated += allocated_amount
-                    
-                    # Adjust if we're over budget
-                    if total_allocated > budget.total_amount:
-                        allocated_amount -= (total_allocated - budget.total_amount)
-                    
-                    BudgetCategory.objects.create(
-                        budget=budget,
-                        category=category,
-                        allocated_amount=allocated_amount
-                    )
-            
-            budgets.append(budget)
+            budget.category_filters.set(config['categories'])
+
+    def create_recurring_transactions(self, user, categories, income_sources):
+        """Create 4 recurring transactions per user."""
+        today = timezone.now().date()
         
-        return budgets
-    
-    def create_sample_expenses(self, user, categories):
-        """Create sample expenses for a user"""
-        expense_descriptions = [
-            "Weekly grocery shopping",
-            "Dinner at restaurant", 
-            "Gas refill",
-            "Movie tickets",
-            "Online shopping",
-            "Coffee with friends",
-            "Monthly subscription",
-            "Public transport pass",
-            "Phone bill",
-            "Electricity bill",
-            "Doctor appointment",
-            "Gym membership",
-            "Book purchase",
-            "Home supplies",
-            "Work lunch",
-            "Uber ride",
-            "Amazon purchase",
-            "Netflix subscription",
-            "Haircut",
-            "Car maintenance"
-        ]
+        # 2 recurring incomes
+        RecurringTransaction.objects.create(
+            user=user,
+            type='income',
+            income_source=next(s for s in income_sources if s.name == 'Salary'),
+            amount=Decimal('45000.00'),
+            currency='PHP',
+            description='Monthly salary',
+            recurrence_pattern='monthly',
+            start_date=today - timedelta(days=365),
+            is_active=True
+        )
         
-        # Create 15-30 random expenses
-        num_expenses = random.randint(15, 30)
+        RecurringTransaction.objects.create(
+            user=user,
+            type='income',
+            income_source=next(s for s in income_sources if s.name == 'Freelance'),
+            amount=Decimal('500.00'),
+            currency='USD',
+            description='Freelance retainer',
+            recurrence_pattern='monthly',
+            start_date=today - timedelta(days=180),
+            is_active=True
+        )
         
-        for i in range(num_expenses):
-            # Random date within last 90 days
-            days_ago = random.randint(0, 90)
-            expense_date = timezone.now().date() - timedelta(days=days_ago)
+        # 2 recurring expenses
+        RecurringTransaction.objects.create(
+            user=user,
+            type='expense',
+            category=next(c for c in categories if c.name == 'Utilities'),
+            amount=Decimal('2500.00'),
+            currency='PHP',
+            description='Electricity bill',
+            recurrence_pattern='monthly',
+            start_date=today - timedelta(days=365),
+            is_active=True
+        )
+        
+        RecurringTransaction.objects.create(
+            user=user,
+            type='expense',
+            category=next(c for c in categories if c.name == 'Entertainment'),
+            amount=Decimal('549.00'),
+            currency='PHP',
+            description='Streaming subscription',
+            recurrence_pattern='monthly',
+            start_date=today - timedelta(days=365),
+            is_active=True
+        )
+
+    def create_incomes(self, user, income_sources):
+        """Create 10 income transactions per user."""
+        today = timezone.now().date()
+        
+        for _ in range(10):
+            currency = random.choice(CURRENCIES)
+            source = random.choice(income_sources)
             
-            # Random category
+            # Amount ranges based on source
+            if source.name == 'Salary':
+                amount = Decimal(random.randint(40000, 60000))
+            elif source.name == 'Freelance':
+                amount = Decimal(random.randint(5000, 20000))
+            elif source.name == 'Business':
+                amount = Decimal(random.randint(10000, 50000))
+            elif source.name == 'Investment':
+                amount = Decimal(random.randint(1000, 10000))
+            else:  # Gift
+                amount = Decimal(random.randint(500, 5000))
+            
+            # Adjust for currency
+            if currency != 'PHP':
+                amount = Decimal(random.randint(100, 2000))
+            
+            # Random date in last 12 months
+            days_ago = random.randint(0, 365)
+            transaction_date = today - timedelta(days=days_ago)
+            
+            # 90% complete, 10% pending
+            status = 'complete' if random.random() < 0.9 else 'pending'
+            
+            # Calculate converted amount
+            exchange_rate = EXCHANGE_RATES.get(currency, Decimal('1.00'))
+            converted_amount = amount * exchange_rate if currency != 'PHP' else amount
+            
+            Income.objects.create(
+                user=user,
+                source=source,
+                amount=amount,
+                currency=currency,
+                exchange_rate=exchange_rate if currency != 'PHP' else None,
+                converted_amount=converted_amount,
+                transaction_date=transaction_date,
+                description=fake.sentence(nb_words=4),
+                status=status
+            )
+
+    def create_expenses(self, user, categories):
+        """Create 25 expense transactions per user."""
+        today = timezone.now().date()
+        
+        # Get budgets for linking
+        budgets = list(Budget.objects.filter(user=user))
+        
+        for _ in range(25):
+            currency = random.choice(CURRENCIES)
             category = random.choice(categories)
             
-            # Random amount based on category
-            if category.name in ['Housing', 'Utilities']:
-                amount = round(random.uniform(100, 500), 2)
-            elif category.name in ['Food & Dining', 'Shopping']:
-                amount = round(random.uniform(20, 150), 2)
-            else:
-                amount = round(random.uniform(5, 100), 2)
+            # Amount ranges based on category
+            amount_ranges = {
+                'Food': (100, 2000),
+                'Transport': (50, 1500),
+                'Utilities': (500, 5000),
+                'Entertainment': (200, 3000),
+                'Shopping': (500, 10000),
+                'Health': (300, 5000),
+                'Education': (1000, 15000),
+                'Bills': (500, 8000),
+            }
+            min_amt, max_amt = amount_ranges.get(category.name, (100, 5000))
+            amount = Decimal(random.randint(min_amt, max_amt))
+            
+            # Adjust for currency
+            if currency != 'PHP':
+                amount = Decimal(random.randint(10, 200))
+            
+            # Random date in last 12 months
+            days_ago = random.randint(0, 365)
+            transaction_date = today - timedelta(days=days_ago)
+            
+            # 90% complete, 10% pending
+            status = 'complete' if random.random() < 0.9 else 'pending'
+            
+            # Calculate converted amount
+            exchange_rate = EXCHANGE_RATES.get(currency, Decimal('1.00'))
+            converted_amount = amount * exchange_rate if currency != 'PHP' else amount
+            
+            # Link to manual budget occasionally (20% chance)
+            budget = None
+            if random.random() < 0.2:
+                manual_budgets = [b for b in budgets if b.budget_type == 'manual']
+                if manual_budgets:
+                    budget = random.choice(manual_budgets)
             
             Expense.objects.create(
                 user=user,
                 category=category,
                 amount=amount,
-                currency_code='USD',
-                description=random.choice(expense_descriptions),
-                expense_date=expense_date,
-                is_recurring=random.choice([True, False, False, False])  # 25% chance of recurring
+                currency=currency,
+                exchange_rate=exchange_rate if currency != 'PHP' else None,
+                converted_amount=converted_amount,
+                transaction_date=transaction_date,
+                description=fake.sentence(nb_words=4),
+                status=status,
+                budget=budget
             )
-        
-        self.stdout.write(f"💸 Created {num_expenses} expenses for {user.username}")
-    
-    def create_sample_income(self, user):
-        """Create sample income for a user"""
-        income_sources = [
-            "Salary",
-            "Freelance Work", 
-            "Investment Returns",
-            "Bonus",
-            "Side Business",
-            "Consulting Fee",
-            "Part-time Job",
-            "Royalties"
-        ]
-        
-        # Create 3-8 income records
-        num_incomes = random.randint(3, 8)
-        
-        for i in range(num_incomes):
-            # Random date within last 90 days
-            days_ago = random.randint(0, 90)
-            income_date = timezone.now().date() - timedelta(days=days_ago)
-            
-            source = random.choice(income_sources)
-            
-            # Random amount based on source
-            if source == 'Salary':
-                amount = round(random.uniform(2000, 5000), 2)
-            elif source in ['Bonus', 'Investment Returns']:
-                amount = round(random.uniform(500, 2000), 2)
-            else:
-                amount = round(random.uniform(100, 800), 2)
-            
-            Income.objects.create(
-                user=user,
-                amount=amount,
-                currency_code='USD',
-                source=source,
-                description=f"Monthly {source}",
-                income_date=income_date,
-                is_recurring=source in ['Salary', 'Investment Returns']
-            )
-        
-        self.stdout.write(f"💰 Created {num_incomes} income records for {user.username}")
-    
-    def print_summary(self):
-        """Print summary of generated data"""
-        self.stdout.write("\n📊 DATA GENERATION SUMMARY:")
-        self.stdout.write(f"   Users: {User.objects.count()}")
-        self.stdout.write(f"   User Profiles: {UserProfile.objects.count()}")
-        self.stdout.write(f"   Expense Categories: {ExpenseCategory.objects.count()}")
-        self.stdout.write(f"   Budgets: {Budget.objects.count()}")
-        self.stdout.write(f"   Budget Categories: {BudgetCategory.objects.count()}")
-        self.stdout.write(f"   Expenses: {Expense.objects.count()}")
-        self.stdout.write(f"   Income: {Income.objects.count()}")
-        
-        # Print user-specific summary
-        self.stdout.write("\n👥 USER BREAKDOWN:")
-        for user in User.objects.all():
-            expenses = Expense.objects.filter(user=user).count()
-            income = Income.objects.filter(user=user).count()
-            budgets = Budget.objects.filter(user=user).count()
-            self.stdout.write(f"   {user.username}: {expenses} expenses, {income} income, {budgets} budgets")
-    
-    def delete_all_data(self):
-        """Delete all sample data (cleanup function)"""
-        self.stdout.write('🧹 Deleting all sample data...')
-        
-        # Delete in proper order to avoid foreign key constraints
-        Income.objects.all().delete()
-        Expense.objects.all().delete()
-        BudgetCategory.objects.all().delete()
-        Budget.objects.all().delete()
-        
-        # Only delete user-specific categories, keep predefined ones
-        ExpenseCategory.objects.filter(is_predefined=False).delete()
-        UserProfile.objects.all().delete()
-        
-        # Delete sample users (keep superusers)
-        User.objects.filter(is_superuser=False).delete()
-        
-        self.stdout.write(self.style.SUCCESS('✅ All sample data deleted!'))

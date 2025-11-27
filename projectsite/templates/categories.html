@@ -1,8 +1,358 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}MoneyLens{% endblock %}
+{% block title %}Categories - MoneyLens{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/categories.css' %}">
+{% endblock %}
 
+{% block content %}
+<!-- Toast Container -->
+<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Categories & Sources</h1>
+        <p class="text-muted mb-0">Manage your expense categories and income sources</p>
+    </div>
+    <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-plus-lg me-2"></i>Add New
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+                <a class="dropdown-item" href="#" onclick="openCreateCategoryModal(); return false;">
+                    <i class="bi bi-tag text-danger me-2"></i>Expense Category
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item" href="#" onclick="openCreateIncomeSourceModal(); return false;">
+                    <i class="bi bi-cash-stack text-success me-2"></i>Income Source
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Expense Categories -->
+    <div class="col-lg-6">
+        <div class="card border">
+            <div class="card-header bg-transparent border-bottom">
+                <h5 class="card-title mb-0 fw-semibold">
+                    <i class="bi bi-tag-fill text-danger me-2"></i>Expense Categories
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="category-list-wrapper">
+                    <ul class="category-list">
+                        {% for category in categories %}
+                        <li class="category-item" onclick="viewCategory('{{ category.id }}')">
+                            <div class="category-icon">
+                                {% if category.icon and '/static/' in category.icon %}
+                                    <!-- Display icon image -->
+                                    <img src="{{ category.icon }}" alt="{{ category.name }}">
+                                {% elif category.icon %}
+                                    <!-- Display Bootstrap icon class (legacy) -->
+                                    <i class="bi {{ category.icon }}"></i>
+                                {% else %}
+                                    <!-- Default icon -->
+                                    <i class="bi bi-tag"></i>
+                                {% endif %}
+                            </div>
+                            <div class="category-details">
+                                <div class="category-name">{{ category.name }}</div>
+                                <div class="category-count">
+                                    {{ category.expense_count }} transaction{{ category.expense_count|pluralize }}
+                                </div>
+                            </div>
+                            <div class="category-arrow">
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                        </li>
+                        {% empty %}
+                        <li class="empty-state">
+                            <i class="bi bi-tag"></i>
+                            <p>No expense categories yet</p>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="openCreateCategoryModal()">
+                                <i class="bi bi-plus-lg me-1"></i>Add Category
+                            </button>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Income Sources -->
+    <div class="col-lg-6">
+        <div class="card border">
+            <div class="card-header bg-transparent border-bottom">
+                <h5 class="card-title mb-0 fw-semibold">
+                    <i class="bi bi-cash-stack text-success me-2"></i>Income Sources
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="category-list-wrapper">
+                    <ul class="category-list">
+                        {% for source in income_sources %}
+                        <li class="category-item" onclick="viewIncomeSource('{{ source.id }}')">
+                            <div class="category-icon income">
+                                {% if source.icon and '/static/' in source.icon %}
+                                    <!-- Display icon image -->
+                                    <img src="{{ source.icon }}" alt="{{ source.name }}">
+                                {% elif source.icon %}
+                                    <!-- Display Bootstrap icon class (legacy) -->
+                                    <i class="bi {{ source.icon }}"></i>
+                                {% else %}
+                                    <!-- Default icon -->
+                                    <i class="bi bi-cash-stack"></i>
+                                {% endif %}
+                            </div>
+                            <div class="category-details">
+                                <div class="category-name">{{ source.name }}</div>
+                                <div class="category-count">
+                                    {{ source.income_count }} transaction{{ source.income_count|pluralize }}
+                                </div>
+                            </div>
+                            <div class="category-arrow">
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                        </li>
+                        {% empty %}
+                        <li class="empty-state">
+                            <i class="bi bi-cash-stack"></i>
+                            <p>No income sources yet</p>
+                            <button type="button" class="btn btn-sm btn-success" onclick="openCreateIncomeSourceModal()">
+                                <i class="bi bi-plus-lg me-1"></i>Add Source
+                            </button>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Detail Modal -->
+<div class="modal fade" id="categoryDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Category Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <div class="detail-icon-large mb-3" id="detail-category-icon">
+                        <i class="bi bi-tag"></i>
+                    </div>
+                    <h4 id="detail-category-name" class="fw-bold mb-0">Category Name</h4>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Total Transactions</span>
+                    <span id="detail-category-count" class="detail-value">0</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Total Spent</span>
+                    <span id="detail-category-total" class="detail-value text-danger">PHP 0.00</span>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-outline-danger" onclick="openDeleteCategoryModal()">
+                    <i class="bi bi-trash me-1"></i>Delete
+                </button>
+                <button type="button" class="btn btn-primary" onclick="openEditCategoryModal()">
+                    <i class="bi bi-pencil me-1"></i>Edit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Income Source Detail Modal -->
+<div class="modal fade" id="incomeSourceDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Income Source Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <div class="detail-icon-large income mb-3" id="detail-source-icon">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
+                    <h4 id="detail-source-name" class="fw-bold mb-0">Source Name</h4>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Total Transactions</span>
+                    <span id="detail-source-count" class="detail-value">0</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Total Earned</span>
+                    <span id="detail-source-total" class="detail-value text-success">PHP 0.00</span>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-outline-danger" onclick="openDeleteIncomeSourceModal()">
+                    <i class="bi bi-trash me-1"></i>Delete
+                </button>
+                <button type="button" class="btn btn-primary" onclick="openEditIncomeSourceModal()">
+                    <i class="bi bi-pencil me-1"></i>Edit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Create/Edit Modal with Icon Picker -->
+<div class="modal fade" id="categoryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="categoryModalLabel">Add Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="categoryForm">
+                    <input type="hidden" id="category-id">
+                    <input type="hidden" id="category-icon" value="/static/img/icons/other.svg">
+                    
+                    <!-- Icon Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Icon</label>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="current-icon-display" 
+                                 id="category-icon-display"
+                                 onclick="openIconPicker(document.getElementById('category-icon').value, updateCategoryIcon)"
+                                 title="Click to change icon">
+                                <img src="/static/img/icons/other.svg" alt="Category Icon">
+                            </div>
+                            <button type="button" 
+                                    class="btn btn-sm btn-outline-primary" 
+                                    onclick="openIconPicker(document.getElementById('category-icon').value, updateCategoryIcon)">
+                                <i class="bi bi-image me-1"></i>Choose Icon
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="category-name" class="form-label">Category Name</label>
+                        <input type="text" class="form-control" id="category-name" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveCategory()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Income Source Create/Edit Modal with Icon Picker -->
+<div class="modal fade" id="incomeSourceModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="incomeSourceModalLabel">Add Income Source</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="incomeSourceForm">
+                    <input type="hidden" id="source-id">
+                    <input type="hidden" id="source-icon" value="/static/img/icons/salary.svg">
+                    
+                    <!-- Icon Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Icon</label>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="current-icon-display" 
+                                 id="source-icon-display"
+                                 onclick="openIconPicker(document.getElementById('source-icon').value, updateSourceIcon)"
+                                 title="Click to change icon">
+                                <img src="/static/img/icons/salary.svg" alt="Source Icon">
+                            </div>
+                            <button type="button" 
+                                    class="btn btn-sm btn-outline-primary" 
+                                    onclick="openIconPicker(document.getElementById('source-icon').value, updateSourceIcon)">
+                                <i class="bi bi-image me-1"></i>Choose Icon
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="source-name" class="form-label">Source Name</label>
+                        <input type="text" class="form-control" id="source-name" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="saveIncomeSource()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Category Modal -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Delete Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                <p class="mt-3 mb-0">Are you sure you want to delete <strong id="delete-category-name"></strong>?</p>
+                <p class="text-muted small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteCategory()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Income Source Modal -->
+<div class="modal fade" id="deleteIncomeSourceModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Delete Income Source</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                <p class="mt-3 mb-0">Are you sure you want to delete <strong id="delete-source-name"></strong>?</p>
+                <p class="text-muted small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteIncomeSource()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include the icon picker modals -->
+{% include 'partials/icon_picker_modal.html' %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const csrfToken = '{{ csrf_token }}';
+    const primaryCurrency = '{{ primary_currency }}';
+</script>
+<script src="{% static 'js/categories.js' %}"></script>
 {% endblock %}

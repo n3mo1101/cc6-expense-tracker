@@ -1,0 +1,61 @@
+{% for transaction in transactions %}
+<tr class="transaction-row" data-type="{{ transaction.type }}" data-id="{{ transaction.id }}">
+    <!-- Desktop View -->
+    <td class="hide-mobile">
+        <div class="d-flex align-items-center gap-3">
+            <div class="transaction-type-icon {{ transaction.type }}">
+                <i class="bi bi-arrow-{% if transaction.type == 'income' %}up{% else %}down{% endif %}-short"></i>
+            </div>
+            <div>
+                <p class="transaction-name">{{ transaction.name }}</p>
+                {% if transaction.description %}
+                <p class="transaction-description">{{ transaction.description|truncatewords:8 }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </td>
+    <td class="hide-mobile">
+        <span class="text-muted">{{ transaction.date|date:"M d, Y" }}</span>
+    </td>
+    <td class="hide-mobile">
+        <span class="transaction-amount {{ transaction.type }}">
+            {% if transaction.type == 'income' %}+{% else %}-{% endif %}{{ transaction.currency }} {{ transaction.amount|floatformat:2 }}
+        </span>
+    </td>
+    <td class="hide-mobile">
+        <span class="status-badge {{ transaction.status }}">{{ transaction.status|capfirst }}</span>
+    </td>
+    
+    <!-- Mobile View -->
+    <td class="show-mobile-only" colspan="4">
+        <div class="mobile-transaction-header">
+            <div class="transaction-type-icon {{ transaction.type }}">
+                <i class="bi bi-arrow-{% if transaction.type == 'income' %}up{% else %}down{% endif %}-short"></i>
+            </div>
+            <div class="mobile-transaction-info">
+                <p class="transaction-name mb-0">{{ transaction.name }}</p>
+                <small class="text-muted">{{ transaction.date|date:"M d, Y" }}</small>
+            </div>
+            <div class="mobile-amount-status">
+                <span class="transaction-amount {{ transaction.type }}">
+                    {% if transaction.type == 'income' %}+{% else %}-{% endif %}{{ transaction.currency }} {{ transaction.amount|floatformat:2 }}
+                </span>
+                <span class="status-badge {{ transaction.status }}">{{ transaction.status|capfirst }}</span>
+            </div>
+        </div>
+    </td>
+</tr>
+{% empty %}
+<tr id="empty-row">
+    <td colspan="4">
+        <div class="empty-transactions">
+            <i class="bi bi-receipt d-block"></i>
+            <h5>No transactions found</h5>
+            <p>Start by adding your first transaction</p>
+            <button type="button" class="btn btn-primary" onclick="openCreateIncomeModal()">
+                <i class="bi bi-plus-lg me-2"></i>Add Transaction
+            </button>
+        </div>
+    </td>
+</tr>
+{% endfor %}
