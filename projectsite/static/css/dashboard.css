@@ -7,6 +7,10 @@
     color: white;
 }
 
+[data-bs-theme="dark"] .wallet-card {
+    background: linear-gradient(135deg, #4cc9f0 0%, #764ba2 100%);;
+}
+
 .progress-wallet {
     height: 12px;
     border-radius: 6px;

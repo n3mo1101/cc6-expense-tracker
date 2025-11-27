@@ -1,3 +1,27 @@
+:root {
+    --primary: #4361ee;
+    --primary-light: #4cc9f0;
+    --secondary: #3a0ca3;
+    --accent: #7209b7;
+    --dark-bg: #0a1128;
+    --dark-card: #132347;
+    --dark-text: #e2e8f0;
+    --dark-text-secondary: #94a3b8;
+    --success: #4bb543;
+}
+
+.brand-header {
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: var(--primary);
+    padding-top: 0.5rem;
+    margin-left: -0.5rem;
+}
+
+[data-bs-theme="dark"] .brand-header {
+    color: var(--primary-light);
+}
+
 /* Sidebar Section Dividers */
 .sidebar-divider {
     margin: 0 1rem 1rem;

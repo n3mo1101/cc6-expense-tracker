@@ -329,7 +329,7 @@
 
 /* Dark mode adjustments */
 [data-bs-theme="dark"] .budget-card {
-    background: linear-gradient(135deg, #4F46E5 0%, #6D28D9 100%);
+    background: linear-gradient(135deg, #4cc9f0 0%, #6D28D9 100%);
 }
 
 [data-bs-theme="dark"] .budget-card.inactive {
