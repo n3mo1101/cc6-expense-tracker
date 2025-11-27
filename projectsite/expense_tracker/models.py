@@ -30,7 +30,7 @@ class UserProfile(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     primary_currency = models.CharField(max_length=3, default='PHP')
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    avatar = models.CharField(max_length=255, default='/static/img/avatars/avatar1.png')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -74,7 +74,7 @@ class Wallet(BaseModel):
 
 class Category(BaseModel):
     name = models.CharField(max_length=100)
-    icon = models.CharField(max_length=50, null=True, blank=True)
+    icon = models.CharField(max_length=255, null=True, blank=True, default='/static/img/icons/icon-default.png')
 
     class Meta:
         db_table = 'category'
@@ -87,7 +87,7 @@ class Category(BaseModel):
 
 class IncomeSource(BaseModel):
     name = models.CharField(max_length=100)
-    icon = models.CharField(max_length=50, null=True, blank=True)
+    icon = models.CharField(max_length=255, null=True, blank=True, default='/static/img/icons/icon-default.png')
 
     class Meta:
         db_table = 'income_source'

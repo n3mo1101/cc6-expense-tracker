@@ -523,7 +523,7 @@ def create_category(request):
         category = Category.objects.create(
             user=user,
             name=data['name'],
-            icon=data.get('icon') or None,
+            icon=data.get('icon') or '/static/img/icons/icon-default.png', 
         )
         
         return JsonResponse({
@@ -547,7 +547,7 @@ def update_category(request, category_id):
         category = Category.objects.get(id=category_id, user=user)
         
         category.name = data.get('name', category.name)
-        category.icon = data.get('icon') or None
+        category.icon = data.get('icon', category.icon)
         category.save()
         
         return JsonResponse({
@@ -621,7 +621,7 @@ def create_income_source(request):
         source = IncomeSource.objects.create(
             user=user,
             name=data['name'],
-            icon=data.get('icon') or None,
+            icon=data.get('icon') or '/static/img/icons/icon-default.png',
         )
         
         return JsonResponse({
@@ -645,7 +645,7 @@ def update_income_source(request, source_id):
         source = IncomeSource.objects.get(id=source_id, user=user)
         
         source.name = data.get('name', source.name)
-        source.icon = data.get('icon') or None
+        source.icon = data.get('icon', source.icon)
         source.save()
         
         return JsonResponse({
@@ -1049,6 +1049,11 @@ def profile_view(request):
     # Get currencies
     currencies = CurrencyService.get_all_currencies()
     
+    # Get current avatar
+    current_avatar = '/static/img/avatars/avatar1.png'  # default
+    if hasattr(user, 'profile') and user.profile.avatar:
+        current_avatar = user.profile.avatar
+    
     context = {
         'wallet': {
             'balance': balance,
@@ -1063,6 +1068,7 @@ def profile_view(request):
             'categories_count': categories_count,
         },
         'currencies': currencies,
+        'current_avatar': current_avatar,
     }
     
     return render(request, 'profile.html', context)
@@ -1087,6 +1093,9 @@ def update_profile(request):
         # Update profile fields
         if hasattr(user, 'profile'):
             user.profile.primary_currency = data.get('primary_currency', user.profile.primary_currency)
+            # ADD THIS LINE - Handle avatar
+            if 'avatar' in data:
+                user.profile.avatar = data['avatar']
             user.profile.save()
         
         return JsonResponse({

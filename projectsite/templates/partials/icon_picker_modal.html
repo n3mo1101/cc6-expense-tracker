@@ -1,0 +1,140 @@
+<!-- Icon Picker Modal (for categories/income sources) -->
+<div class="modal fade" id="iconPickerModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Choose an Icon</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-2" id="iconPickerGrid">
+                    <!-- Icons will be loaded here dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Avatar Picker Modal (for user profile) -->
+<div class="modal fade" id="avatarPickerModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Choose an Avatar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3" id="avatarPickerGrid">
+                    <!-- Avatars will be loaded here dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Icon Picker Styles */
+.icon-picker-item {
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.2s ease;
+    text-align: center;
+    background: var(--bs-light);
+}
+
+.icon-picker-item:hover {
+    border-color: var(--bs-primary);
+    background: var(--bs-primary-bg-subtle);
+    transform: scale(1.05);
+}
+
+.icon-picker-item.selected {
+    border-color: var(--bs-primary);
+    background: var(--bs-primary-bg-subtle);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2);
+}
+
+.icon-picker-item img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+/* Avatar Picker Styles */
+.avatar-picker-item {
+    cursor: pointer;
+    border: 3px solid transparent;
+    border-radius: 50%;
+    padding: 4px;
+    transition: all 0.2s ease;
+    background: var(--bs-light);
+}
+
+.avatar-picker-item:hover {
+    border-color: var(--bs-primary);
+    transform: scale(1.05);
+}
+
+.avatar-picker-item.selected {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.2);
+}
+
+.avatar-picker-item img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Current Icon/Avatar Display */
+.current-icon-display {
+    width: 60px;
+    height: 60px;
+    border: 2px solid var(--bs-border-color);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--bs-light);
+}
+
+.current-icon-display:hover {
+    border-color: var(--bs-primary);
+    background: var(--bs-primary-bg-subtle);
+}
+
+.current-icon-display img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.current-avatar-display {
+    width: 100px;
+    height: 100px;
+    border: 3px solid var(--bs-border-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.current-avatar-display:hover {
+    border-color: var(--bs-primary);
+    transform: scale(1.05);
+}
+
+.current-avatar-display img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+</style>

@@ -1,5 +1,11 @@
 /* Profile Page Scripts */
 
+/* Avatar picker callback for profile */
+function updateProfileAvatar(avatarPath) {
+    document.getElementById('profile-avatar').value = avatarPath;
+    updateAvatarDisplay('profile-avatar-display', avatarPath);
+}
+
 /* Save Profile Changes */
 function saveProfile() {
     const data = {
@@ -7,6 +13,7 @@ function saveProfile() {
         last_name: document.getElementById('last-name').value,
         email: document.getElementById('email').value,
         primary_currency: document.getElementById('primary-currency').value,
+        avatar: document.getElementById('profile-avatar').value, // Include avatar
     };
     
     fetch('/api/profile/update/', {

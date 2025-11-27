@@ -24,17 +24,18 @@
     <div class="col-lg-8">
         <div class="card border">
             <div class="card-body p-4">
+                <!-- <img src="{{ user.profile.avatar.url }}" alt="Profile" class="profile-avatar"> -->
                 <!-- Profile Avatar Section -->
                 <div class="text-center mb-4">
                     <div class="profile-avatar-wrapper">
-                        {% if user.profile.avatar %}
-                        <img src="{{ user.profile.avatar.url }}" alt="Profile" class="profile-avatar">
-                        {% else %}
-                        <div class="profile-avatar-placeholder">
-                            <i class="bi bi-person-circle"></i>
+                        <div class="current-avatar-display" 
+                            id="profile-avatar-display"
+                            onclick="openAvatarPicker(document.getElementById('profile-avatar').value, updateProfileAvatar)"
+                            title="Click to change avatar">
+                            <img class="profile-avatar" src="{{ user.profile.avatar|default:'/static/img/avatars/avatar1.png' }}" alt="Profile Avatar">
                         </div>
-                        {% endif %}
-                        <button type="button" class="profile-avatar-edit" onclick="alert('Avatar upload coming soon!')">
+                        <button type="button" class="profile-avatar-edit"
+                            onclick="openAvatarPicker(document.getElementById('profile-avatar').value, updateProfileAvatar)">
                             <i class="bi bi-camera-fill"></i>
                         </button>
                     </div>
@@ -46,6 +47,7 @@
 
                 <!-- Profile Form -->
                 <form id="profileForm">
+                    <input type="hidden" id="profile-avatar" value="{{ user.profile.avatar|default:'/static/img/avatars/avatar1.png' }}">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="first-name" class="form-label">First Name</label>
@@ -181,8 +183,12 @@
             </div>
         </div>
     </div>
+    
+    <!-- Include the icon-picker modal -->
+    {% include 'partials/icon_picker_modal.html' %}
 </div>
 {% endblock %}
+
 
 {% block extra_js %}
 <script>

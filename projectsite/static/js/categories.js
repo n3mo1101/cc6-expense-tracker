@@ -9,7 +9,11 @@ let currentIncomeSource = null;
 function openCreateCategoryModal() {
     document.getElementById('categoryForm').reset();
     document.getElementById('category-id').value = '';
+    document.getElementById('category-icon').value = '/static/img/icons/icon-default.png';
     document.getElementById('categoryModalLabel').textContent = 'Add Category';
+    
+    // Update icon display
+    updateIconDisplay('category-icon-display', '/static/img/icons/icon-default.png');
     
     const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
     modal.show();
@@ -35,8 +39,18 @@ function viewCategory(categoryId) {
 
 /* Show Category Detail Modal */
 function showCategoryDetailModal(category) {
-    const iconClass = category.icon || 'bi-tag';
-    document.getElementById('detail-category-icon').className = `bi ${iconClass}`;
+    // Update to show icon image instead of Bootstrap icon class
+    const iconDisplay = document.getElementById('detail-category-icon');
+    if (category.icon && category.icon.startsWith('/static/')) {
+        // It's an image path
+        iconDisplay.innerHTML = `<img src="${category.icon}" alt="Icon" style="width: 48px; height: 48px;">`;
+    } else {
+        // Fallback to Bootstrap icon
+        const iconClass = category.icon || 'bi-tag';
+        iconDisplay.className = `bi ${iconClass}`;
+        iconDisplay.innerHTML = '';
+    }
+    
     document.getElementById('detail-category-name').textContent = category.name;
     document.getElementById('detail-category-count').textContent = category.expense_count;
     document.getElementById('detail-category-total').textContent = `${primaryCurrency} ${parseFloat(category.total_spent).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
@@ -53,11 +67,20 @@ function openEditCategoryModal() {
     
     document.getElementById('category-id').value = currentCategory.id;
     document.getElementById('category-name').value = currentCategory.name;
-    document.getElementById('category-icon').value = currentCategory.icon || '';
+    document.getElementById('category-icon').value = currentCategory.icon || '/static/img/icons/icon-default.png';
     document.getElementById('categoryModalLabel').textContent = 'Edit Category';
+    
+    // Update icon display
+    updateIconDisplay('category-icon-display', currentCategory.icon || '/static/img/icons/icon-default.png');
     
     const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
     modal.show();
+}
+
+/* Icon picker callback for categories */
+function updateCategoryIcon(iconPath) {
+    document.getElementById('category-icon').value = iconPath;
+    updateIconDisplay('category-icon-display', iconPath);
 }
 
 /* Save Category */
@@ -138,7 +161,11 @@ function confirmDeleteCategory() {
 function openCreateIncomeSourceModal() {
     document.getElementById('incomeSourceForm').reset();
     document.getElementById('source-id').value = '';
+    document.getElementById('source-icon').value = '/static/img/icons/salary.svg';
     document.getElementById('incomeSourceModalLabel').textContent = 'Add Income Source';
+    
+    // Update icon display
+    updateIconDisplay('source-icon-display', '/static/img/icons/salary.svg');
     
     const modal = new bootstrap.Modal(document.getElementById('incomeSourceModal'));
     modal.show();
@@ -164,8 +191,18 @@ function viewIncomeSource(sourceId) {
 
 /* Show Income Source Detail Modal */
 function showIncomeSourceDetailModal(source) {
-    const iconClass = source.icon || 'bi-cash-stack';
-    document.getElementById('detail-source-icon').className = `bi ${iconClass}`;
+    // Update to show icon image instead of Bootstrap icon class
+    const iconDisplay = document.getElementById('detail-source-icon');
+    if (source.icon && source.icon.startsWith('/static/')) {
+        // It's an image path
+        iconDisplay.innerHTML = `<img src="${source.icon}" alt="Icon" style="width: 48px; height: 48px;">`;
+    } else {
+        // Fallback to Bootstrap icon
+        const iconClass = source.icon || 'bi-cash-stack';
+        iconDisplay.className = `bi ${iconClass}`;
+        iconDisplay.innerHTML = '';
+    }
+    
     document.getElementById('detail-source-name').textContent = source.name;
     document.getElementById('detail-source-count').textContent = source.income_count;
     document.getElementById('detail-source-total').textContent = `${primaryCurrency} ${parseFloat(source.total_earned).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
@@ -182,11 +219,20 @@ function openEditIncomeSourceModal() {
     
     document.getElementById('source-id').value = currentIncomeSource.id;
     document.getElementById('source-name').value = currentIncomeSource.name;
-    document.getElementById('source-icon').value = currentIncomeSource.icon || '';
+    document.getElementById('source-icon').value = currentIncomeSource.icon || '/static/img/icons/salary.svg';
     document.getElementById('incomeSourceModalLabel').textContent = 'Edit Income Source';
+    
+    // Update icon display
+    updateIconDisplay('source-icon-display', currentIncomeSource.icon || '/static/img/icons/salary.svg');
     
     const modal = new bootstrap.Modal(document.getElementById('incomeSourceModal'));
     modal.show();
+}
+
+/* Icon picker callback for income sources */
+function updateSourceIcon(iconPath) {
+    document.getElementById('source-icon').value = iconPath;
+    updateIconDisplay('source-icon-display', iconPath);
 }
 
 /* Save Income Source */
