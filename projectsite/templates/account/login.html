@@ -3,12 +3,13 @@
 {% load pwa %}
 <!DOCTYPE html>
 <html>
-<head>
-    {% progressive_web_app_meta %}
-    <link rel="icon" type="image/x-icon" href="{% static 'img/logo-256.png' %}">
-    <title>Login - MoneyLens</title>
-    <link rel="stylesheet" href="{% static 'css/login.css' %}">
-</head>
+    <head>
+        {% progressive_web_app_meta %}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <link rel="icon" type="image/x-icon" href="{% static 'img/logo-256.png' %}">
+        <title>Login - MoneyLens</title>
+        <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    </head>
 <body>
     <div class="login-container">
         <div class="login-header">

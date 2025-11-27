@@ -420,3 +420,71 @@
         width: 4px;
     }
 }
+
+/* Dashboard Responsive Fixes */
+@media (max-width: 768px) {
+    .d-flex.flex-column.flex-md-row .gap-3 {
+        gap: 1rem !important;
+    }
+    
+    .d-flex.gap-2.flex-nowrap {
+        flex-wrap: wrap !important;
+        justify-content: space-between !important;
+    }
+    
+    .d-flex.gap-2.flex-nowrap .btn,
+    .d-flex.gap-2.flex-nowrap .dropdown {
+        flex: 1;
+        min-width: 140px;
+        text-align: center;
+    }
+    
+    .d-flex.gap-2.flex-nowrap .btn-outline-secondary {
+        margin-right: 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .d-flex.gap-2.flex-nowrap {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .d-flex.gap-2.flex-nowrap .btn,
+    .d-flex.gap-2.flex-nowrap .dropdown {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .d-flex.gap-2.flex-nowrap .btn:last-child,
+    .d-flex.gap-2.flex-nowrap .dropdown:last-child {
+        margin-bottom: 0;
+    }
+}
+
+/* Ensure buttons don't wrap on medium screens */
+@media (min-width: 577px) and (max-width: 768px) {
+    .d-flex.gap-2.flex-nowrap {
+        flex-wrap: nowrap !important;
+    }
+}
+
+/* Stats cards responsive improvements */
+@media (max-width: 768px) {
+    .stats-card .card-body {
+        padding: 1rem !important;
+    }
+    
+    .stats-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
+}
+
+/* Chart container responsive fixes */
+@media (max-width: 768px) {
+    .chart-container {
+        height: 250px;
+    }
+}
