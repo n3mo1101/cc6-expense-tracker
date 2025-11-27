@@ -13,16 +13,16 @@
 
 <!-- Header with Actions -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
-    <div class="flex-shrink-0 mb-2 mb-md-0">
+    <div>
         <h1 class="h3 fw-bold mb-1">Dashboard</h1>
         <p class="text-muted mb-0">Welcome back, {{ request.user.first_name|default:request.user.username }}!</p>
     </div>
-    <div class="d-flex gap-2 flex-nowrap align-items-center w-100 w-md-auto justify-content-start justify-content-md-end">
-        <a href="{% url 'budgets' %}" class="btn btn-outline-secondary flex-shrink-0">
-            <i class="bi bi-wallet2 me-2"></i>View Budgets
+    <div class="header-buttons d-flex gap-2 w-100 w-md-auto">
+        <a href="{% url 'budgets' %}" class="btn btn-outline-secondary flex-fill text-nowrap">
+            <i class="bi bi-wallet2 me-2"></i><span class="d-none d-sm-inline">View </span>Budgets
         </a>
-        <div class="dropdown flex-shrink-0">
-            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <div class="dropdown flex-fill">
+            <button class="btn btn-primary dropdown-toggle w-100 text-nowrap" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-plus-lg me-2"></i><span class="d-none d-sm-inline">Add </span>Transaction
             </button>
             <ul class="dropdown-menu dropdown-menu-end">

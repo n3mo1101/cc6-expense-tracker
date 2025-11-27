@@ -488,3 +488,28 @@
         height: 250px;
     }
 }
+
+/* Header buttons spacing */
+.header-buttons.d-flex.gap-2 {
+    flex-wrap: nowrap;
+}
+
+/* Ensure buttons stay side by side on mobile */
+@media (max-width: 768px) {
+    .header-buttons.d-flex.gap-2 {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+/* Very small screen adjustments */
+@media (max-width: 480px) {
+    .header-buttons.d-flex.gap-2 {
+        gap: 0.5rem !important;
+    }
+    
+    .header-buttons.d-flex.gap-2 .btn {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+}
