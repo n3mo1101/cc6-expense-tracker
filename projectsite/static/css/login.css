@@ -300,7 +300,7 @@ body {
 }
 
 .google-btn {
-    width: 100%;
+    width: auto;
     border-color: rgba(66, 133, 244, 0.3);
 }
 
