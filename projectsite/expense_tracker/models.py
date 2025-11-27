@@ -33,6 +33,8 @@ class UserProfile(models.Model):
     avatar = models.CharField(max_length=255, default='/static/img/avatars/avatar1.png')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # Track if predefined data has been created for this user
+    has_predefined_data = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'user_profile'
@@ -75,6 +77,8 @@ class Wallet(BaseModel):
 class Category(BaseModel):
     name = models.CharField(max_length=100)
     icon = models.CharField(max_length=255, null=True, blank=True, default='/static/img/icons/icon-default.png')
+    # Track if this is a system predefined category
+    is_predefined = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'category'
@@ -88,6 +92,8 @@ class Category(BaseModel):
 class IncomeSource(BaseModel):
     name = models.CharField(max_length=100)
     icon = models.CharField(max_length=255, null=True, blank=True, default='/static/img/icons/icon-default.png')
+    # Track if this is a system predefined income source
+    is_predefined = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'income_source'
@@ -95,6 +101,67 @@ class IncomeSource(BaseModel):
 
     def __str__(self):
         return self.name
+
+
+# ============================================================================
+# PREDEFINED DATA CONFIGURATION
+# ============================================================================
+
+class PredefinedDataManager:
+    """Manager class to handle predefined categories and income sources"""
+    
+    # Predefined expense categories with their icons
+    PREDEFINED_CATEGORIES = [
+        {'name': 'Food & Dining', 'icon': 'ec-food.png'},
+        {'name': 'Groceries', 'icon': 'ec-grocery.png'},
+        {'name': 'Transportation', 'icon': 'ec-transport.png'},
+        {'name': 'Shopping', 'icon': 'ec-shopping.png'},
+        {'name': 'Entertainment', 'icon': 'ec-entertainment.png'},
+        {'name': 'Bills & Utilities', 'icon': 'ec-bills.png'},
+        {'name': 'Healthcare', 'icon': 'ec-health.png'},
+        {'name': 'Education', 'icon': 'ec-education.png'},
+        {'name': 'Games & Hobbies', 'icon': 'ec-games.png'},
+        {'name': 'Other Expenses', 'icon': 'icon-other.png'},
+    ]
+    
+    # Predefined income sources with their icons
+    PREDEFINED_INCOME_SOURCES = [
+        {'name': 'Salary', 'icon': 'is-salary.png'},
+        {'name': 'Freelance', 'icon': 'is-freelance.png'},
+        {'name': 'Business', 'icon': 'is-business.png'},
+        {'name': 'Investment', 'icon': 'is-investment.png'},
+        {'name': 'Gifts', 'icon': 'is-gift.png'},
+        {'name': 'Savings', 'icon': 'is-savings.png'},
+        {'name': 'Payment', 'icon': 'is-payment.png'},
+        {'name': 'Other Income', 'icon': 'icon-other.png'},
+    ]
+    
+    @classmethod
+    def create_predefined_data_for_user(cls, user):
+        """Create predefined categories and income sources for a new user"""
+        
+        # Create predefined categories
+        for category_data in cls.PREDEFINED_CATEGORIES:
+            Category.objects.create(
+                user=user,
+                name=category_data['name'],
+                icon=f"/static/img/icons/{category_data['icon']}",
+                is_predefined=True
+            )
+        
+        # Create predefined income sources
+        for income_data in cls.PREDEFINED_INCOME_SOURCES:
+            IncomeSource.objects.create(
+                user=user,
+                name=income_data['name'],
+                icon=f"/static/img/icons/{income_data['icon']}",
+                is_predefined=True
+            )
+        
+        # Mark that predefined data has been created
+        profile, created = UserProfile.objects.get_or_create(user=user)
+        profile.has_predefined_data = True
+        profile.save()
 
 
 # ============================================================================
@@ -356,7 +423,10 @@ class CurrencyCache(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     # Auto-create UserProfile when User is created.
     if created:
-        UserProfile.objects.create(user=instance)
+        profile = UserProfile.objects.create(user=instance)
+        
+        # Create predefined data for new users
+        PredefinedDataManager.create_predefined_data_for_user(instance)
 
 
 @receiver(post_save, sender=UserProfile)
