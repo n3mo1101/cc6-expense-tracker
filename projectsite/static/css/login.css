@@ -41,20 +41,54 @@ body::after {
     background-color: rgba(13, 10, 96, 0.5); /* adjust darkness here */
     z-index: -1; /* above GIF but below content */
 }
+.logo-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
 
+.logo-container img {
+    width: 80px;      /* adjust size as needed */
+    height: auto;
+    object-fit: contain;
+    display: inline-block;
+}
+
+.login-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* vertical centering */
+    width: 100%;
+    height: 100vh;
+    gap: 10px; /* space between logo and container */
+}
+.logo-container {
+    text-align: center;
+    margin-bottom: 10px; /* space between logo and container */
+    z-index: 10;
+}
+
+.logo-container img {
+    width: 250px; /* enlarged logo */
+    height: auto;
+    object-fit: contain;
+    display: inline-block;
+}
+
+/* Login container */
 .login-container {
     width: 100%;
     max-width: 400px;
     padding: 30px;
-    border-radius: 50px; /* bubble shape */
-    background: rgba(28, 28, 28, 0.3); /* semi-transparent */
-    backdrop-filter: blur(15px); /* frosted glass effect */
-    -webkit-backdrop-filter: blur(15px); /* Safari support */
+    border-radius: 50px;
+    background: rgba(28, 28, 28, 0.3);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(104, 194, 194, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.1);
     position: relative;
     overflow: hidden;
-    margin: 20px;
+    margin: 0 auto;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -388,6 +422,9 @@ body::after {
         max-width: 450px;
         padding: 35px;
     }
+    .logo-container img {
+        width: 60px;  /* smaller logo for small screens */
+    }
 }
 
 /* Mobile Devices (up to 767px) */
@@ -409,6 +446,9 @@ body::after {
     .login-header p {
         font-size: 13px;
     }
+    .logo-container img {
+        width: 60px;  /* smaller logo for small screens */
+    }
 }
 
 /* Small Mobile Devices (up to 480px) */
@@ -419,6 +459,9 @@ body::after {
         padding-top: 20px;
     }
     
+    .logo-container img {
+        width: 60px;  /* smaller logo for small screens */
+    }
     .login-container {
         padding: 20px 18px;
         margin: 10px auto;
@@ -490,6 +533,10 @@ body::after {
     .login-container {
         padding: 18px 15px;
     }
+
+    .logo-container img {
+        width: 60px;  /* smaller logo for small screens */
+    }
     
     .login-header h2 {
         font-size: 18px;
@@ -514,6 +561,10 @@ body::after {
         padding-bottom: 15px;
     }
     
+    .logo-container img {
+        width: 60px;  /* smaller logo for small screens */
+    }
+
     .login-container {
         margin: 10px auto;
         padding: 20px;
@@ -539,12 +590,18 @@ body::after {
     .login-container {
         margin: 15px auto;
     }
+    .logo-container img {
+        width: 60px;  /* smaller logo for small screens */
+    }
 }
 
 @media (max-height: 600px) {
     body {
         padding-top: 15px;
         padding-bottom: 15px;
+    }
+    .logo-container img {
+        width: 60px;  /* smaller logo for small screens */
     }
     
     .login-container {
