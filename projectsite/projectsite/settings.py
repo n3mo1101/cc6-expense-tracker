@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+import socket
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -143,8 +144,11 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Site ID
-SITE_ID = 1
+# Dynamically set SITE_ID based on hostname
+if "pythonanywhere" in socket.gethostname():
+    SITE_ID = 2 # production site (n3mo.pythonanywhere.com)
+else:
+    SITE_ID = 1 # local site (127.0.0.1:8000)
 
 # Authentication backends
 AUTHENTICATION_BACKENDS = [

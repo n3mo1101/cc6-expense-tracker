@@ -1,10 +1,8 @@
 {% load static %}
 {% load socialaccount %}
-{% load pwa %}
 <!DOCTYPE html>
 <html>
     <head>
-        {% progressive_web_app_meta %}
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <link rel="icon" type="image/x-icon" href="{% static 'img/logo-256.png' %}">
         <title>Login - MoneyLens</title>
@@ -89,11 +87,21 @@
                 <span>or continue with</span>
             </div>
             
+            {% get_providers as socialaccount_providers %}
+
             <!-- Google Login Button -->
-            <a href="#" class="social-btn google-btn">
-                <img src="{% static 'img/google.png' %}" class="icon" alt="">
-                <span>Sign in with Google</span>
-            </a>
+            {% if 'google' in socialaccount_providers %}
+                <a href="{% provider_login_url 'google' %}" class="social-btn google-btn">
+                    <img src="{% static 'img/google.png' %}" class="icon" alt="Google">
+                    <span>Sign in with Google</span>
+                </a>
+            {% else %}
+                <!-- Fallback if Google provider is not enabled -->
+                <a href="#" class="social-btn google-btn" disabled title="Google signup not configured">
+                    <img src="{% static 'img/google.png' %}" class="icon" alt="Google">
+                    <span>Sign in with Google (Coming Soon)</span>
+                </a>
+            {% endif %}     
         </div>
 
         <div class="additional-links">
