@@ -91,6 +91,19 @@
                 <button type="submit" class="login-btn">Sign Up</button>
             </form>
 
+             <!-- Social Login Section -->
+             <div class="social-login-section">
+                <div class="divider">
+                    <span>or continue with</span>
+                </div>
+                
+                <!-- Google Login Button -->
+                <a href="{% provider_login_url 'google' %}" class="social-btn google-btn">
+                    <img src="{% static 'img/google.png' %}" class="icon" alt="Google">
+                    <span>Sign up with Google</span>
+                </a>
+            </div>
+
             <div class="additional-links">
                 <p>Already have an account? <a href="{% url 'account_login' %}" class="register-link">Sign in here</a></p>
             </div>
