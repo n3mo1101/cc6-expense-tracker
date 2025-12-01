@@ -308,3 +308,16 @@
 .sort-btn.active.desc i {
     transform: translateY(1px);
 }
+
+@media (max-width: 576px) {
+    /* Page header buttons - center and full width */
+    .header-actions {
+        width: 100%;
+    }
+    
+    .header-actions .btn {
+        flex: 1;
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+}
