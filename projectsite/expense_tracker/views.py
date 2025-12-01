@@ -138,39 +138,6 @@ def transactions_view(request):
     return render(request, 'transactions.html', context)
 
 
-@login_required
-def analytics_view(request):
-    """Analytics and data visualization"""
-    user = request.user
-    
-    # Reuse the same chart functions for analytics page
-    context = {
-        'spending_trends': json.dumps(
-            DashboardService.get_spending_trends(user, months=12)
-        ),
-        'current_month_trends': json.dumps(
-            DashboardService.get_current_month_trends(user)
-        ),
-        'category_breakdown': json.dumps(
-            DashboardService.get_category_breakdown(user)
-        ),
-    }
-    
-    return render(request, 'analytics.html', context)
-
-
-@login_required
-def income_view(request):
-    """Manage income"""
-    return render(request, 'income.html')
-
-
-@login_required
-def expenses_view(request):
-    """Manage expenses"""
-    return render(request, 'expenses.html')
-
-
 # ===== BUDGETS VIEW =====
 @login_required
 def budgets_view(request):
@@ -1137,3 +1104,10 @@ def change_password(request):
     
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+# ===== PROFILE VIEW =====
+@login_required
+def settings_view(request):
+    """Manage income"""
+    return render(request, 'settings.html')
