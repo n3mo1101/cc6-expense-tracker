@@ -175,14 +175,14 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
 # --- Progressive Web App Settings ---
-PWA_APP_NAME = 'ProjectSite'
-PWA_APP_DESCRIPTION = "A Progressive Web App version of ProjectSite"
+PWA_APP_NAME = 'MoneyLens'
+PWA_APP_DESCRIPTION = "MoneyLens is a finance tracking webapp built with PWA."
 PWA_APP_THEME_COLOR = '#0A0A0A'
-PWA_APP_BACKGROUND_COLOR = '#FFFFFF'
+PWA_APP_BACKGROUND_COLOR = '#0A1128;' 
 PWA_APP_DISPLAY = 'standalone'
 PWA_APP_SCOPE = '/'
 PWA_APP_ORIENTATION = 'portrait'
-PWA_APP_START_URL = '/'
+PWA_APP_START_URL = '/dashboard'
 PWA_APP_STATUS_BAR_COLOR = 'default'
 PWA_APP_ICONS = [
     {
