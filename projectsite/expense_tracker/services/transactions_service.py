@@ -1,8 +1,3 @@
-"""
-Transactions Service
-Reusable functions for transactions data.
-"""
-
 from django.db.models import Q, Value, CharField
 from django.db.models.functions import Concat
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -15,21 +10,7 @@ class TransactionsService:
 
     @classmethod
     def get_combined_transactions(cls, user, filters=None, page=1, per_page=15, for_json=False, sort='date_desc'):
-        """
-        Get combined income and expense transactions with filtering,
-        sorting, and pagination.
-        
-        Args:
-            user: User object
-            filters: dict with keys: search, type, status
-            page: Page number
-            per_page: Items per page
-            for_json: If True, convert dates to ISO strings for JSON response
-            sort: Sort option ('date_desc', 'date_asc', 'amount_desc', 'amount_asc')
-        
-        Returns:
-            dict with transactions, pagination info, and filter options
-        """
+        # Get combined income and expense transactions with filtering, sorting, and pagination.
         filters = filters or {}
         
         # Get incomes

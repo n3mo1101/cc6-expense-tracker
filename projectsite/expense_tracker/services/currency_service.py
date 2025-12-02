@@ -1,21 +1,3 @@
-"""
-Currency Service
-Handles exchange rate fetching, caching, validation, and conversion.
-
-Usage:
-    from expense_tracker.services.currency_service import CurrencyService
-    
-    # Convert amount
-    result = CurrencyService.convert(100, 'USD', 'PHP')
-    # Returns: {'converted_amount': Decimal('5650.00'), 'rate': Decimal('56.50')}
-    
-    # Validate currency code
-    is_valid = CurrencyService.is_valid_currency('USD')
-    
-    # Get all valid currencies
-    currencies = CurrencyService.get_all_currencies()
-"""
-
 import os
 import requests
 from decimal import Decimal, ROUND_HALF_UP
@@ -62,20 +44,7 @@ class CurrencyService:
 
     @classmethod
     def convert(cls, amount, from_currency, to_currency):
-        """
-        Convert amount from one currency to another.
-        
-        Args:
-            amount: Decimal or float amount to convert
-            from_currency: Source currency code (e.g., 'USD')
-            to_currency: Target currency code (e.g., 'PHP')
-        
-        Returns:
-            dict: {'converted_amount': Decimal, 'rate': Decimal}
-        
-        Raises:
-            ValueError: If currency code is invalid
-        """
+        # Convert amount from one currency to another.
         amount = Decimal(str(amount))
         
         # Same currency, no conversion needed

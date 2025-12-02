@@ -1,13 +1,3 @@
-"""
-Dashboard Service
-Reusable functions for dashboard data and charts.
-
-Usage:
-    from expense_tracker.services.dashboard_service import DashboardService
-    
-    data = DashboardService.get_dashboard_data(user)
-"""
-
 from decimal import Decimal
 from datetime import timedelta, date
 from django.db.models import Sum, Q
@@ -307,17 +297,16 @@ class DashboardService:
     def get_recent_transactions(cls, user, limit=7):
         """
         Get recent transactions (both income and expenses combined).
-        Returns list sorted by transaction_date descending.
+        Returns list sorted by transaction_date AND created_at descending.
         """
-        # Get recent incomes (include pending too for recent list)
         incomes = Income.objects.filter(
             user=user
-        ).select_related('source').order_by('-transaction_date')[:limit]
+        ).select_related('source').order_by('-transaction_date', '-created_at')[:limit * 2]
         
         # Get recent expenses
         expenses = Expense.objects.filter(
             user=user
-        ).select_related('category').order_by('-transaction_date')[:limit]
+        ).select_related('category').order_by('-transaction_date', '-created_at')[:limit * 2]
         
         # Combine and format
         transactions = []
@@ -331,6 +320,7 @@ class DashboardService:
                 'converted_amount': safe_decimal(income.converted_amount) if income.converted_amount else None,
                 'currency': income.currency or 'PHP',
                 'date': income.transaction_date,
+                'created_at': income.created_at,  # Include for sorting
                 'status': income.status,
                 'description': income.description or '',
                 'icon': income.source.icon if income.source else None,
@@ -345,12 +335,13 @@ class DashboardService:
                 'converted_amount': safe_decimal(expense.converted_amount) if expense.converted_amount else None,
                 'currency': expense.currency or 'PHP',
                 'date': expense.transaction_date,
+                'created_at': expense.created_at,  # Include for sorting
                 'status': expense.status,
                 'description': expense.description or '',
                 'icon': expense.category.icon if expense.category else None,
             })
         
-        # Sort by date descending and limit
-        transactions.sort(key=lambda x: x['date'], reverse=True)
+        # Sort by transaction_date (primary) and created_at (secondary) descending
+        transactions.sort(key=lambda x: (x['date'], x['created_at']), reverse=True)
         
         return transactions[:limit]
