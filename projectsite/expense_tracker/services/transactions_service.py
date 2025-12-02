@@ -58,6 +58,7 @@ class TransactionsService:
                 'currency': income.currency,
                 # Keep as date object for template, convert to string for JSON
                 'date': income.transaction_date.isoformat() if for_json else income.transaction_date,
+                'created_at': income.created_at,  # Include for sorting
                 'status': income.status,
                 'description': income.description or '',
                 'icon': income.source.icon,
@@ -74,6 +75,7 @@ class TransactionsService:
                 'currency': expense.currency,
                 # Keep as date object for template, convert to string for JSON
                 'date': expense.transaction_date.isoformat() if for_json else expense.transaction_date,
+                'created_at': expense.created_at,  # Include for sorting
                 'status': expense.status,
                 'description': expense.description or '',
                 'icon': expense.category.icon,
@@ -82,9 +84,15 @@ class TransactionsService:
         
         # Sort transactions based on sort parameter
         if sort == 'date_asc':
-            transactions.sort(key=lambda x: x['date'] if isinstance(x['date'], str) else x['date'].isoformat())
+            transactions.sort(key=lambda x: (
+                x['date'] if isinstance(x['date'], str) else x['date'].isoformat(),
+                x['created_at']
+            ))
         elif sort == 'date_desc':
-            transactions.sort(key=lambda x: x['date'] if isinstance(x['date'], str) else x['date'].isoformat(), reverse=True)
+            transactions.sort(key=lambda x: (
+                x['date'] if isinstance(x['date'], str) else x['date'].isoformat(),
+                x['created_at']
+            ), reverse=True)
         elif sort == 'amount_asc':
             # Use converted_amount for sorting (normalized to primary currency)
             transactions.sort(key=lambda x: x['converted_amount'] or x['amount'])
@@ -92,8 +100,11 @@ class TransactionsService:
             # Use converted_amount for sorting (normalized to primary currency)
             transactions.sort(key=lambda x: x['converted_amount'] or x['amount'], reverse=True)
         else:
-            # Default to date descending
-            transactions.sort(key=lambda x: x['date'] if isinstance(x['date'], str) else x['date'].isoformat(), reverse=True)
+            # Default to date descending with created_at as secondary sort
+            transactions.sort(key=lambda x: (
+                x['date'] if isinstance(x['date'], str) else x['date'].isoformat(),
+                x['created_at']
+            ), reverse=True)
         
         # Pagination
         paginator = Paginator(transactions, per_page)
